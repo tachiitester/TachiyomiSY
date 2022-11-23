@@ -425,14 +425,14 @@ class SettingsReaderScreen : SearchableSettings {
                         12 to stringResource(R.string.reader_preload_amount_12_pages),
                         14 to stringResource(R.string.reader_preload_amount_14_pages),
                         16 to stringResource(R.string.reader_preload_amount_16_pages),
-                        20 to stringResource(R.string.reader_preload_amount_20_pages),
+                        50 to stringResource(R.string.reader_preload_amount_50_pages),
                     ),
                 ),
                 Preference.PreferenceItem.ListPreference(
                     pref = readerPreferences.readerThreads(),
                     title = stringResource(R.string.download_threads),
                     subtitle = stringResource(R.string.download_threads_summary),
-                    entries = List(5) { it }.associateWith { it.toString() },
+                    entries = List(8) { it }.associateWith { it.toString() },
                 ),
                 Preference.PreferenceItem.ListPreference(
                     pref = readerPreferences.cacheSize(),
