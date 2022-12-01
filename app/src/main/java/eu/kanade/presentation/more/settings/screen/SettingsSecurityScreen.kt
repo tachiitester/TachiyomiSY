@@ -40,7 +40,7 @@ import eu.kanade.tachiyomi.util.system.AuthenticatorUtil.isAuthenticationSupport
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 
-class SettingsSecurityScreen : SearchableSettings {
+object SettingsSecurityScreen : SearchableSettings {
 
     @ReadOnlyComposable
     @Composable
@@ -77,7 +77,7 @@ class SettingsSecurityScreen : SearchableSettings {
                         when (it) {
                             -1 -> stringResource(R.string.lock_never)
                             0 -> stringResource(R.string.lock_always)
-                            else -> pluralStringResource(R.plurals.lock_after_mins, count = it, it)
+                            else -> pluralStringResource(id = R.plurals.lock_after_mins, count = it, it)
                         }
                     },
                 onValueChanged = {

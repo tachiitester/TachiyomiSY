@@ -520,7 +520,7 @@ class MangaInfoScreenModel(
 
     suspend fun smartSearchMerge(manga: Manga, originalMangaId: Long): Manga {
         val originalManga = getManga.await(originalMangaId)
-            ?: throw IllegalArgumentException(context.getString(R.string.merge_unknown_manga, originalMangaId))
+            ?: throw IllegalArgumentException(context.getString(R.string.merge_unknown_entry, originalMangaId))
         if (originalManga.source == MERGED_SOURCE_ID) {
             val children = getMergedReferencesById.await(originalMangaId)
             if (children.any { it.mangaSourceId == manga.source && it.mangaUrl == manga.url }) {
@@ -934,30 +934,40 @@ class MangaInfoScreenModel(
         mergedData: MergedMangaData?,
         alwaysShowReadingProgress: Boolean,
     ): List<ChapterItem> {
+        val isLocal = manga.isLocal()
         // SY -->
         val isExhManga = manga.isEhBasedManga()
         val enabledLanguages = Injekt.get<SourcePreferences>().enabledLanguages().get()
             .filterNot { it in listOf("all", "other") }
         // SY <--
         return map { chapter ->
-            val activeDownload = downloadManager.queue.find { chapter.id == it.chapter.id }
+            val activeDownload = if (isLocal) {
+                null
+            } else {
+                downloadManager.getQueuedDownloadOrNull(chapter.id)
+            }
             // SY -->
             val manga = mergedData?.manga?.get(chapter.mangaId) ?: manga
             val source = mergedData?.sources?.find { manga.source == it.id }?.takeIf { mergedData.sources.size > 2 }
             // SY <--
-            val downloaded = downloadManager.isChapterDownloaded(
-                // SY -->
-                chapter.name,
-                chapter.scanlator,
-                manga.ogTitle,
-                manga.source,
-                // SY <--
-            )
+            val downloaded = if (isLocal) {
+                true
+            } else {
+                downloadManager.isChapterDownloaded(
+                    // SY -->
+                    chapter.name,
+                    chapter.scanlator,
+                    manga.ogTitle,
+                    manga.source,
+                    // SY <--
+                )
+            }
             val downloadState = when {
                 activeDownload != null -> activeDownload.status
                 downloaded -> Download.State.DOWNLOADED
                 else -> Download.State.NOT_DOWNLOADED
             }
+
             ChapterItem(
                 chapter = chapter,
                 downloadState = downloadState,
@@ -1142,8 +1152,8 @@ class MangaInfoScreenModel(
     }
 
     fun cancelDownload(chapterId: Long) {
-        val activeDownload = downloadManager.queue.find { chapterId == it.chapter.id } ?: return
-        downloadManager.deletePendingDownload(activeDownload)
+        val activeDownload = downloadManager.getQueuedDownloadOrNull(chapterId) ?: return
+        downloadManager.cancelQueuedDownloads(listOf(activeDownload))
         updateDownloadState(activeDownload.apply { status = Download.State.NOT_DOWNLOADED })
     }
 
@@ -1653,6 +1663,11 @@ sealed class MangaScreenState {
                         TriStateFilter.ENABLED_NOT -> !it.isDownloaded && !isLocalManga
                     }
                 }
+                // SY -->
+                .filter { chapter ->
+                    manga.filteredScanlators.isNullOrEmpty() || MdUtil.getScanlators(chapter.chapter.scanlator).any { group -> manga.filteredScanlators.contains(group) }
+                }
+                // SY <--
                 .sortedWith { (chapter1), (chapter2) -> getChapterSort(manga).invoke(chapter1, chapter2) }
         }
     }

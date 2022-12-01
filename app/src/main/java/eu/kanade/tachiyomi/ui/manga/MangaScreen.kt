@@ -59,13 +59,14 @@ import eu.kanade.tachiyomi.source.online.HttpSource
 import eu.kanade.tachiyomi.ui.base.controller.popControllerWithTag
 import eu.kanade.tachiyomi.ui.base.controller.pushController
 import eu.kanade.tachiyomi.ui.base.controller.withFadeTransaction
-import eu.kanade.tachiyomi.ui.browse.migration.advanced.design.PreMigrationController
+import eu.kanade.tachiyomi.ui.browse.migration.advanced.design.PreMigrationScreen
 import eu.kanade.tachiyomi.ui.browse.source.SourcesController
 import eu.kanade.tachiyomi.ui.browse.source.SourcesController.Companion.SMART_SEARCH_SOURCE_TAG
 import eu.kanade.tachiyomi.ui.browse.source.browse.BrowseSourceController
 import eu.kanade.tachiyomi.ui.browse.source.feed.SourceFeedController
+import eu.kanade.tachiyomi.ui.browse.source.feed.SourceFeedScreen
 import eu.kanade.tachiyomi.ui.browse.source.globalsearch.GlobalSearchController
-import eu.kanade.tachiyomi.ui.category.CategoryController
+import eu.kanade.tachiyomi.ui.category.CategoryScreen
 import eu.kanade.tachiyomi.ui.history.HistoryController
 import eu.kanade.tachiyomi.ui.library.LibraryController
 import eu.kanade.tachiyomi.ui.main.MainActivity
@@ -77,6 +78,7 @@ import eu.kanade.tachiyomi.ui.webview.WebViewActivity
 import eu.kanade.tachiyomi.util.chapter.getNextUnread
 import eu.kanade.tachiyomi.util.lang.launchUI
 import eu.kanade.tachiyomi.util.lang.withNonCancellableContext
+import eu.kanade.tachiyomi.util.system.copyToClipboard
 import eu.kanade.tachiyomi.util.system.toShareIntent
 import eu.kanade.tachiyomi.util.system.toast
 import exh.md.similar.MangaDexSimilarController
@@ -85,7 +87,7 @@ import exh.recs.RecommendsController
 import exh.source.MERGED_SOURCE_ID
 import exh.source.getMainSource
 import exh.source.isMdBasedSource
-import exh.ui.metadata.MetadataViewController
+import exh.ui.metadata.MetadataViewScreen
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -136,7 +138,12 @@ class MangaScreen(
             state = successState,
             snackbarHostState = screenModel.snackbarHostState,
             isTabletUi = isTabletUi(),
-            onBackClicked = router::popCurrentController,
+            onBackClicked = {
+                when {
+                    navigator.canPop -> navigator.pop()
+                    else -> router.popCurrentController()
+                }
+            },
             onChapterClicked = { openChapter(context, it) },
             onDownloadChapter = screenModel::runChapterDownloadActions.takeIf { !successState.source.isLocalOrStub() },
             onAddToLibraryClicked = {
@@ -152,19 +159,20 @@ class MangaScreen(
                 }
             }.takeIf { isHttpSource },
             // SY <--
+            onWebViewLongClicked = { copyMangaUrl(context, screenModel.manga, screenModel.source) }.takeIf { isHttpSource },
             onTrackingClicked = screenModel::showTrackDialog.takeIf { successState.trackingAvailable },
-            onTagClicked = { performGenreSearch(router, it, screenModel.source!!) },
+            onTagClicked = { performGenreSearch(router, navigator, it, screenModel.source!!) },
             onFilterButtonClicked = screenModel::showSettingsDialog,
             onRefresh = screenModel::fetchAllFromSource,
             onContinueReading = { continueReading(context, screenModel.getNextUnreadChapter()) },
-            onSearch = { query, global -> performSearch(router, query, global) },
+            onSearch = { query, global -> performSearch(router, navigator, query, global) },
             onCoverClicked = screenModel::showCoverDialog,
             onShareClicked = { shareManga(context, screenModel.manga, screenModel.source) }.takeIf { isHttpSource },
             onDownloadActionClicked = screenModel::runDownloadAction.takeIf { !successState.source.isLocalOrStub() },
             onEditCategoryClicked = screenModel::promptChangeCategories.takeIf { successState.manga.favorite },
-            onMigrateClicked = { migrateManga(router, screenModel.manga!!) }.takeIf { successState.manga.favorite },
             // SY -->
-            onMetadataViewerClicked = { openMetadataViewer(router, successState.manga) },
+            onMigrateClicked = { migrateManga(navigator, screenModel.manga!!) }.takeIf { successState.manga.favorite },
+            onMetadataViewerClicked = { openMetadataViewer(navigator, successState.manga) },
             onEditInfoClicked = screenModel::showEditMangaInfoDialog,
             onRecommendClicked = { openRecommends(context, router, screenModel.source?.getMainSource(), successState.manga) },
             onMergedSettingsClicked = screenModel::showEditMergedSettingsDialog,
@@ -193,7 +201,7 @@ class MangaScreen(
                 ChangeCategoryDialog(
                     initialSelection = dialog.initialSelection,
                     onDismissRequest = onDismissRequest,
-                    onEditCategories = { router.pushController(CategoryController()) },
+                    onEditCategories = { navigator.push(CategoryScreen()) },
                     onConfirm = { include, _ ->
                         screenModel.moveMangaToCategoriesAndAddToLibrary(dialog.manga, include)
                     },
@@ -235,7 +243,9 @@ class MangaScreen(
                 onSortModeChanged = screenModel::setSorting,
                 onDisplayModeChanged = screenModel::setDisplayMode,
                 onSetAsDefault = screenModel::setCurrentSettingsAsDefault,
+                // SY -->
                 onClickShowScanlatorSelection = { showScanlatorsDialog = true }.takeIf { successState.scanlators.size > 1 },
+                // SY <--
             )
             MangaInfoScreenModel.Dialog.TrackSheet -> {
                 var enableSwipeDismiss by remember { mutableStateOf(true) }
@@ -290,6 +300,7 @@ class MangaScreen(
                     LoadingScreen(Modifier.systemBarsPadding())
                 }
             }
+            // SY -->
             is MangaInfoScreenModel.Dialog.EditMangaInfo -> {
                 EditMangaDialog(
                     manga = dialog.manga,
@@ -305,6 +316,7 @@ class MangaScreen(
                     onPositiveClick = screenModel::updateMergeSettings,
                 )
             }
+            // SY <--
         }
         // SY -->
         if (showScanlatorsDialog) {
@@ -357,11 +369,24 @@ class MangaScreen(
      *
      * @param query the search query to the parent controller
      */
-    private fun performSearch(router: Router, query: String, global: Boolean) {
+    private fun performSearch(router: Router, navigator: Navigator, query: String, global: Boolean) {
         if (global) {
             router.pushController(GlobalSearchController(query))
             return
         }
+
+        // SY -->
+        if (navigator.canPop) {
+            when (val previousScreen = navigator.items[navigator.items.size - 2]) {
+                is SourceFeedScreen -> {
+                    navigator.pop()
+                    previousScreen.onBrowseClick(router, previousScreen.sourceId, query)
+                }
+            }
+
+            return
+        }
+        // SY <--
 
         if (router.backstackSize < 2) {
             return
@@ -388,7 +413,8 @@ class MangaScreen(
             // SY -->
             is SourceFeedController -> {
                 router.handleBack()
-                previousController.onBrowseClick(query)
+                router.handleBack()
+                router.pushController(BrowseSourceController(previousController.sourceId, query))
             }
             // SY <--
         }
@@ -399,7 +425,7 @@ class MangaScreen(
      *
      * @param genreName the search genre to the parent controller
      */
-    private fun performGenreSearch(router: Router, genreName: String, source: Source) {
+    private fun performGenreSearch(router: Router, navigator: Navigator, genreName: String, source: Source) {
         if (router.backstackSize < 2) {
             return
         }
@@ -412,26 +438,36 @@ class MangaScreen(
             router.handleBack()
             previousController.searchWithGenre(genreName)
         } else {
-            performSearch(router, genreName, global = false)
+            performSearch(router, navigator, genreName, global = false)
         }
     }
 
     /**
+     * Copy Manga URL to Clipboard
+     */
+    private fun copyMangaUrl(context: Context, manga_: Manga?, source_: Source?) {
+        val manga = manga_ ?: return
+        val source = source_ as? HttpSource ?: return
+        val url = source.getMangaUrl(manga.toSManga())
+        context.copyToClipboard(url, url)
+    }
+
+    // SY -->
+    /**
      * Initiates source migration for the specific manga.
      */
-    private fun migrateManga(router: Router, manga: Manga) {
+    private fun migrateManga(navigator: Navigator, manga: Manga) {
         // SY -->
-        PreMigrationController.navigateToMigration(
+        PreMigrationScreen.navigateToMigration(
             Injekt.get<UnsortedPreferences>().skipPreMigration().get(),
-            router,
+            navigator,
             listOf(manga.id),
         )
         // SY <--
     }
 
-    // SY -->
-    private fun openMetadataViewer(router: Router, manga: Manga) {
-        router.pushController(MetadataViewController(manga))
+    private fun openMetadataViewer(navigator: Navigator, manga: Manga) {
+        navigator.push(MetadataViewScreen(manga.id, manga.source))
     }
 
     private fun openMergedMangaWebview(context: Context, mergedMangaData: MergedMangaData) {
@@ -441,8 +477,7 @@ class MangaScreen(
         MaterialAlertDialogBuilder(context)
             .setTitle(R.string.action_open_in_web_view)
             .setSingleChoiceItems(
-                mergedManga.mapIndexed { index, _ -> sources[index].toString() }
-                    .toTypedArray(),
+                Array(mergedManga.size) { index -> sources[index].toString() },
                 -1,
             ) { dialog, index ->
                 dialog.dismiss()
@@ -451,9 +486,7 @@ class MangaScreen(
             .setNegativeButton(android.R.string.cancel, null)
             .show()
     }
-    // SY <--
 
-    // SY -->
     private fun openMorePagePreviews(router: Router, manga: Manga) {
         router.pushController(PagePreviewController(manga.id))
     }
@@ -497,7 +530,7 @@ class MangaScreen(
                         true,
                     ).withFadeTransaction(),
                 )
-                context.toast(R.string.manga_merged)
+                context.toast(R.string.entry_merged)
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
 

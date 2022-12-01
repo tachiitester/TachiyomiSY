@@ -22,6 +22,7 @@ import eu.kanade.tachiyomi.ui.category.CategoryController
 import eu.kanade.tachiyomi.ui.download.DownloadController
 import eu.kanade.tachiyomi.ui.history.HistoryController
 import eu.kanade.tachiyomi.ui.setting.SettingsMainController
+import eu.kanade.tachiyomi.ui.stats.StatsController
 import eu.kanade.tachiyomi.ui.updates.UpdatesController
 import eu.kanade.tachiyomi.util.lang.launchIO
 import eu.kanade.tachiyomi.util.system.isInstalledFromFDroid
@@ -54,6 +55,7 @@ object MoreScreen : Screen {
             // SY <--
             onClickDownloadQueue = { router.pushController(DownloadController()) },
             onClickCategories = { router.pushController(CategoryController()) },
+            onClickStats = { router.pushController(StatsController()) },
             onClickBackupAndRestore = { router.pushController(SettingsMainController.toBackupScreen()) },
             onClickSettings = { router.pushController(SettingsMainController()) },
             onClickAbout = { router.pushController(SettingsMainController.toAboutScreen()) },
@@ -90,7 +92,7 @@ private class MoreScreenModel(
         coroutineScope.launchIO {
             combine(
                 DownloadService.isRunning,
-                downloadManager.queue.updatedFlow(),
+                downloadManager.queue.updates,
             ) { isRunning, downloadQueue -> Pair(isRunning, downloadQueue.size) }
                 .collectLatest { (isDownloading, downloadQueueSize) ->
                     val pendingDownloadExists = downloadQueueSize != 0

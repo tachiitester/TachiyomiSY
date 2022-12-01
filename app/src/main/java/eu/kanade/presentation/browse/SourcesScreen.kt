@@ -19,7 +19,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -40,154 +39,87 @@ import eu.kanade.presentation.util.plus
 import eu.kanade.presentation.util.topSmallPaddingValues
 import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.source.LocalSource
-import eu.kanade.tachiyomi.ui.browse.source.SourcesPresenter
-import eu.kanade.tachiyomi.ui.browse.source.SourcesPresenter.Dialog
+import eu.kanade.tachiyomi.ui.browse.source.SourcesState
 import eu.kanade.tachiyomi.util.system.LocaleHelper
-import eu.kanade.tachiyomi.util.system.toast
-import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun SourcesScreen(
-    presenter: SourcesPresenter,
+    state: SourcesState,
     contentPadding: PaddingValues,
     onClickItem: (Source, String) -> Unit,
-    onClickDisable: (Source) -> Unit,
     onClickPin: (Source) -> Unit,
-    onClickSetCategories: (Source, List<String>) -> Unit,
-    onClickToggleDataSaver: (Source) -> Unit,
+    onLongClickItem: (Source) -> Unit,
 ) {
-    val context = LocalContext.current
     when {
-        presenter.isLoading -> LoadingScreen()
-        presenter.isEmpty -> EmptyScreen(
+        state.isLoading -> LoadingScreen(modifier = Modifier.padding(contentPadding))
+        state.isEmpty -> EmptyScreen(
             textResource = R.string.source_empty_screen,
             modifier = Modifier.padding(contentPadding),
         )
         else -> {
-            SourceList(
-                state = presenter,
-                contentPadding = contentPadding,
-                onClickItem = onClickItem,
-                onClickDisable = onClickDisable,
-                onClickPin = onClickPin,
-                onClickSetCategories = onClickSetCategories,
-                onClickToggleDataSaver = onClickToggleDataSaver,
-            )
-        }
-    }
-    LaunchedEffect(Unit) {
-        presenter.events.collectLatest { event ->
-            when (event) {
-                SourcesPresenter.Event.FailedFetchingSources -> {
-                    context.toast(R.string.internal_error)
+            ScrollbarLazyColumn(
+                contentPadding = contentPadding + topSmallPaddingValues,
+            ) {
+                items(
+                    items = state.items,
+                    contentType = {
+                        when (it) {
+                            is SourceUiModel.Header -> "header"
+                            is SourceUiModel.Item -> "item"
+                        }
+                    },
+                    key = {
+                        when (it) {
+                            is SourceUiModel.Header -> it.hashCode()
+                            is SourceUiModel.Item -> "source-${it.source.key()}"
+                        }
+                    },
+                ) { model ->
+                    when (model) {
+                        is SourceUiModel.Header -> {
+                            SourceHeader(
+                                modifier = Modifier.animateItemPlacement(),
+                                language = model.language,
+                                // SY -->
+                                isCategory = model.isCategory,
+                                // SY <--
+                            )
+                        }
+                        is SourceUiModel.Item -> SourceItem(
+                            modifier = Modifier.animateItemPlacement(),
+                            source = model.source,
+                            // SY -->
+                            showLatest = state.showLatest,
+                            showPin = state.showPin,
+                            // SY <--
+                            onClickItem = onClickItem,
+                            onLongClickItem = onLongClickItem,
+                            onClickPin = onClickPin,
+                        )
+                    }
                 }
             }
         }
     }
-}
-
-@Composable
-private fun SourceList(
-    state: SourcesState,
-    contentPadding: PaddingValues,
-    onClickItem: (Source, String) -> Unit,
-    onClickDisable: (Source) -> Unit,
-    onClickPin: (Source) -> Unit,
-    onClickSetCategories: (Source, List<String>) -> Unit,
-    onClickToggleDataSaver: (Source) -> Unit,
-) {
-    ScrollbarLazyColumn(
-        contentPadding = contentPadding + topSmallPaddingValues,
-    ) {
-        items(
-            items = state.items,
-            contentType = {
-                when (it) {
-                    is SourceUiModel.Header -> "header"
-                    is SourceUiModel.Item -> "item"
-                }
-            },
-            key = {
-                when (it) {
-                    is SourceUiModel.Header -> it.hashCode()
-                    is SourceUiModel.Item -> "source-${it.source.key()}"
-                }
-            },
-        ) { model ->
-            when (model) {
-                is SourceUiModel.Header -> {
-                    SourceHeader(
-                        modifier = Modifier.animateItemPlacement(),
-                        language = model.language,
-                        isCategory = model.isCategory,
-                    )
-                }
-                is SourceUiModel.Item -> SourceItem(
-                    modifier = Modifier.animateItemPlacement(),
-                    source = model.source,
-                    showLatest = state.showLatest,
-                    showPin = state.showPin,
-                    onClickItem = onClickItem,
-                    onLongClickItem = { state.dialog = Dialog.SourceLongClick(it) },
-                    onClickPin = onClickPin,
-                )
-            }
-        }
-    }
-
-    // SY -->
-    when (val dialog = state.dialog) {
-        is Dialog.SourceCategories -> {
-            SourceCategoriesDialog(
-                source = dialog.source,
-                categories = state.categories,
-                onClickCategories = { source, newCategories ->
-                    onClickSetCategories(source, newCategories)
-                    state.dialog = null
-                },
-                onDismiss = { state.dialog = null },
-            )
-        }
-        is Dialog.SourceLongClick -> {
-            val source = dialog.source
-            SourceOptionsDialog(
-                source = source,
-                onClickPin = {
-                    onClickPin(source)
-                    state.dialog = null
-                },
-                onClickDisable = {
-                    onClickDisable(source)
-                    state.dialog = null
-                },
-                onClickSetCategories = {
-                    state.dialog = Dialog.SourceCategories(source)
-                },
-                onClickToggleDataSaver = {
-                    onClickToggleDataSaver(source)
-                    state.dialog = null
-                },
-                onDismiss = { state.dialog = null },
-            )
-        }
-        null -> Unit
-    }
-    // SY <--
 }
 
 @Composable
 private fun SourceHeader(
     modifier: Modifier = Modifier,
     language: String,
+    // SY -->
     isCategory: Boolean,
+    // SY <--
 ) {
     val context = LocalContext.current
     Text(
+        // SY -->
         text = if (!isCategory) {
             LocaleHelper.getSourceDisplayName(language, context)
         } else {
             language
         },
+        // SY <--
         modifier = modifier
             .padding(horizontal = MaterialTheme.padding.medium, vertical = MaterialTheme.padding.small),
         style = MaterialTheme.typography.header,
@@ -252,12 +184,14 @@ private fun SourcePinButton(
 }
 
 @Composable
-private fun SourceOptionsDialog(
+fun SourceOptionsDialog(
     source: Source,
     onClickPin: () -> Unit,
     onClickDisable: () -> Unit,
+    // SY -->
     onClickSetCategories: () -> Unit,
     onClickToggleDataSaver: () -> Unit,
+    // SY <--
     onDismiss: () -> Unit,
 ) {
     AlertDialog(
@@ -320,7 +254,7 @@ sealed class SourceUiModel {
 fun SourceCategoriesDialog(
     source: Source?,
     categories: List<String>,
-    onClickCategories: (Source, List<String>) -> Unit,
+    onClickCategories: (List<String>) -> Unit,
     onDismiss: () -> Unit,
 ) {
     source ?: return
@@ -361,7 +295,7 @@ fun SourceCategoriesDialog(
         },
         onDismissRequest = onDismiss,
         confirmButton = {
-            TextButton(onClick = { onClickCategories(source, newCategories.toList()) }) {
+            TextButton(onClick = { onClickCategories(newCategories.toList()) }) {
                 Text(text = stringResource(android.R.string.ok))
             }
         },

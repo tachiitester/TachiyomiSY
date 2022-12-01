@@ -52,7 +52,7 @@ open class BrowseSourceController(bundle: Bundle) :
 
             // SY -->
             if (smartSearchConfig != null) {
-                putParcelable(SMART_SEARCH_CONFIG_KEY, smartSearchConfig)
+                putSerializable(SMART_SEARCH_CONFIG_KEY, smartSearchConfig)
             }
 
             if (savedSearch != null) {
@@ -152,6 +152,8 @@ open class BrowseSourceController(bundle: Bundle) :
 
         val onDismissRequest = { presenter.dialog = null }
         when (val dialog = presenter.dialog) {
+            null -> {}
+            is Dialog.Migrate -> {}
             is Dialog.AddDuplicateManga -> {
                 DuplicateMangaDialog(
                     onDismissRequest = onDismissRequest,
@@ -182,7 +184,6 @@ open class BrowseSourceController(bundle: Bundle) :
                     },
                 )
             }
-            null -> {}
         }
 
         BackHandler(onBack = ::navigateUp)
@@ -207,7 +208,7 @@ open class BrowseSourceController(bundle: Bundle) :
         filterSheet = SourceFilterSheet(
             activity!!,
             // SY -->
-            this,
+            router,
             presenter.source!!,
             emptyList(),
             // SY <--

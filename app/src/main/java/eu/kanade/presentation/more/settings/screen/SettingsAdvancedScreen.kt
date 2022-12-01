@@ -69,6 +69,7 @@ import eu.kanade.tachiyomi.network.PREF_DOH_MULLVAD
 import eu.kanade.tachiyomi.network.PREF_DOH_NJALLA
 import eu.kanade.tachiyomi.network.PREF_DOH_QUAD101
 import eu.kanade.tachiyomi.network.PREF_DOH_QUAD9
+import eu.kanade.tachiyomi.network.PREF_DOH_SHECAN
 import eu.kanade.tachiyomi.source.SourceManager
 import eu.kanade.tachiyomi.ui.base.controller.pushController
 import eu.kanade.tachiyomi.util.CrashLogUtil
@@ -97,7 +98,7 @@ import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import java.io.File
 
-class SettingsAdvancedScreen : SearchableSettings {
+object SettingsAdvancedScreen : SearchableSettings {
     @ReadOnlyComposable
     @Composable
     @StringRes
@@ -251,6 +252,7 @@ class SettingsAdvancedScreen : SearchableSettings {
                 ),
                 Preference.PreferenceItem.TextPreference(
                     title = stringResource(R.string.pref_invalidate_download_cache),
+                    subtitle = stringResource(R.string.pref_invalidate_download_cache_summary),
                     onClick = { Injekt.get<DownloadCache>().invalidateCache() },
                 ),
                 Preference.PreferenceItem.TextPreference(
@@ -318,6 +320,7 @@ class SettingsAdvancedScreen : SearchableSettings {
                         PREF_DOH_MULLVAD to "Mullvad",
                         PREF_DOH_CONTROLD to "Control D",
                         PREF_DOH_NJALLA to "Njalla",
+                        PREF_DOH_SHECAN to "Shecan",
                     ),
                     onValueChanged = {
                         context.toast(R.string.requires_app_restart)
@@ -732,8 +735,6 @@ class SettingsAdvancedScreen : SearchableSettings {
         )
     }
 
-    companion object {
-        private var job: Job? = null
-    }
+    private var job: Job? = null
     // SY <--
 }
