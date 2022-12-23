@@ -4,7 +4,6 @@ import android.content.Context
 import com.hippo.unifile.UniFile
 import com.jakewharton.rxrelay.PublishRelay
 import eu.kanade.domain.chapter.model.Chapter
-import eu.kanade.domain.chapter.model.toDbChapter
 import eu.kanade.domain.download.service.DownloadPreferences
 import eu.kanade.domain.manga.model.COMIC_INFO_FILE
 import eu.kanade.domain.manga.model.ComicInfo
@@ -44,7 +43,6 @@ import rx.schedulers.Schedulers
 import rx.subscriptions.CompositeSubscription
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
-import uy.kohesive.injekt.injectLazy
 import java.io.BufferedOutputStream
 import java.io.File
 import java.util.zip.CRC32
@@ -72,20 +70,16 @@ class Downloader(
     private val sourceManager: SourceManager = Injekt.get(),
     private val chapterCache: ChapterCache = Injekt.get(),
     private val downloadPreferences: DownloadPreferences = Injekt.get(),
+    private val xml: XML = Injekt.get(),
     // SY -->
     private val sourcePreferences: SourcePreferences = Injekt.get(),
     // SY <--
 ) {
 
     /**
-     * xml format used for ComicInfo files
-     */
-    private val xml: XML by injectLazy()
-
-    /**
      * Store for persisting downloads across restarts.
      */
-    private val store = DownloadStore(context, sourceManager)
+    private val store = DownloadStore(context)
 
     /**
      * Queue where active downloads are kept.
@@ -273,7 +267,7 @@ class Downloader(
             // Filter out those already enqueued.
             .filter { chapter -> queue.none { it.chapter.id == chapter.id } }
             // Create a download for each one.
-            .map { Download(source, manga, it.toDbChapter()) }
+            .map { Download(source, manga, it) }
 
         if (chaptersToQueue.isNotEmpty()) {
             queue.addAll(chaptersToQueue)
@@ -328,7 +322,7 @@ class Downloader(
 
         val pageListObservable = if (download.pages == null) {
             // Pull page list from network and add them to download object
-            download.source.fetchPageList(download.chapter)
+            download.source.fetchPageList(download.chapter.toSChapter())
                 .map { pages ->
                     if (pages.isEmpty()) {
                         throw Exception(context.getString(R.string.page_list_empty_error))
@@ -420,13 +414,13 @@ class Downloader(
                 page.uri = file.uri
                 page.progress = 100
                 download.downloadedImages++
-                page.status = Page.READY
+                page.status = Page.State.READY
             }
             .map { page }
             // Mark this page as error and allow to download the remaining
             .onErrorReturn {
                 page.progress = 0
-                page.status = Page.ERROR
+                page.status = Page.State.ERROR
                 notifier.onError(it.message, download.chapter.name, download.manga.title)
                 page
             }
@@ -441,7 +435,7 @@ class Downloader(
      * @param filename the filename of the image.
      */
     private fun downloadImage(page: Page, source: HttpSource, tmpDir: UniFile, filename: String, dataSaver: DataSaver): Observable<UniFile> {
-        page.status = Page.DOWNLOAD_IMAGE
+        page.status = Page.State.DOWNLOAD_IMAGE
         page.progress = 0
         return source.fetchImage(page, dataSaver)
             .map { response ->

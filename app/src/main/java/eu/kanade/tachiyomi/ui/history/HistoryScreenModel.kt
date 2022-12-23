@@ -1,12 +1,9 @@
 package eu.kanade.tachiyomi.ui.history
 
 import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.getValue
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.coroutineScope
-import eu.kanade.core.prefs.asState
 import eu.kanade.core.util.insertSeparators
-import eu.kanade.domain.base.BasePreferences
 import eu.kanade.domain.chapter.model.Chapter
 import eu.kanade.domain.history.interactor.GetHistory
 import eu.kanade.domain.history.interactor.GetNextChapters
@@ -15,6 +12,7 @@ import eu.kanade.domain.history.model.HistoryWithRelations
 import eu.kanade.presentation.history.HistoryUiModel
 import eu.kanade.tachiyomi.util.lang.launchIO
 import eu.kanade.tachiyomi.util.lang.toDateKey
+import eu.kanade.tachiyomi.util.lang.withIOContext
 import eu.kanade.tachiyomi.util.system.logcat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
@@ -36,14 +34,10 @@ class HistoryScreenModel(
     private val getHistory: GetHistory = Injekt.get(),
     private val getNextChapters: GetNextChapters = Injekt.get(),
     private val removeHistory: RemoveHistory = Injekt.get(),
-    preferences: BasePreferences = Injekt.get(),
 ) : StateScreenModel<HistoryState>(HistoryState()) {
 
     private val _events: Channel<Event> = Channel(Channel.UNLIMITED)
     val events: Flow<Event> = _events.receiveAsFlow()
-
-    val isDownloadOnly: Boolean by preferences.downloadedOnly().asState(coroutineScope)
-    val isIncognitoMode: Boolean by preferences.incognitoMode().asState(coroutineScope)
 
     init {
         coroutineScope.launch {
@@ -74,6 +68,10 @@ class HistoryScreenModel(
                     else -> null
                 }
             }
+    }
+
+    suspend fun getNextChapter(): Chapter? {
+        return withIOContext { getNextChapters.await(onlyUnread = false).firstOrNull() }
     }
 
     fun getNextChapterForManga(mangaId: Long, chapterId: Long) {

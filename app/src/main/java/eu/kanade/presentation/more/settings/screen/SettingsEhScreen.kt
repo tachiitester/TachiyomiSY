@@ -46,13 +46,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat.startActivity
-import cafe.adriel.voyager.navigator.currentOrThrow
 import eu.kanade.domain.UnsortedPreferences
 import eu.kanade.domain.manga.interactor.DeleteFavoriteEntries
 import eu.kanade.domain.manga.interactor.GetExhFavoriteMangaWithMetadata
 import eu.kanade.domain.manga.interactor.GetFlatMetadataById
+import eu.kanade.presentation.library.components.SyncFavoritesWarningDialog
 import eu.kanade.presentation.more.settings.Preference
-import eu.kanade.presentation.util.LocalRouter
 import eu.kanade.presentation.util.collectAsState
 import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.data.preference.DEVICE_CHARGING
@@ -66,9 +65,7 @@ import eu.kanade.tachiyomi.util.system.toast
 import exh.eh.EHentaiUpdateWorker
 import exh.eh.EHentaiUpdateWorkerConstants
 import exh.eh.EHentaiUpdaterStats
-import exh.favorites.FavoritesIntroDialog
 import exh.metadata.metadata.EHentaiSearchMetadata
-import exh.uconfig.WarnConfigureDialogController
 import exh.ui.login.EhLoginActivity
 import exh.util.nullIfBlank
 import kotlinx.serialization.decodeFromString
@@ -126,17 +123,17 @@ object SettingsEhScreen : SearchableSettings {
 
     @Composable
     override fun getPreferences(): List<Preference> {
-        val router = LocalRouter.currentOrThrow
-        val openWarnConfigureDialogController = {
-            WarnConfigureDialogController.uploadSettings(router)
-        }
         val unsortedPreferences: UnsortedPreferences = remember { Injekt.get() }
         val getFlatMetadataById: GetFlatMetadataById = remember { Injekt.get() }
         val deleteFavoriteEntries: DeleteFavoriteEntries = remember { Injekt.get() }
         val getExhFavoriteMangaWithMetadata: GetExhFavoriteMangaWithMetadata = remember { Injekt.get() }
         val exhentaiEnabled by unsortedPreferences.enableExhentai().collectAsState()
+        var runConfigureDialog by remember { mutableStateOf(false) }
+        val openWarnConfigureDialogController = { runConfigureDialog = true }
 
         Reconfigure(unsortedPreferences, openWarnConfigureDialogController)
+
+        ConfigureExhDialog(run = runConfigureDialog, onRunning = { runConfigureDialog = false })
 
         return listOf(
             Preference.PreferenceGroup(
@@ -850,13 +847,17 @@ object SettingsEhScreen : SearchableSettings {
 
     @Composable
     fun syncFavoriteNotes(): Preference.PreferenceItem.TextPreference {
-        val context = LocalContext.current
+        var dialogOpen by remember { mutableStateOf(false) }
+        if (dialogOpen) {
+            SyncFavoritesWarningDialog(
+                onDismissRequest = { dialogOpen = false },
+                onAccept = { dialogOpen = false },
+            )
+        }
         return Preference.PreferenceItem.TextPreference(
             title = stringResource(R.string.show_favorite_sync_notes),
             subtitle = stringResource(R.string.show_favorite_sync_notes_summary),
-            onClick = {
-                FavoritesIntroDialog().show(context)
-            },
+            onClick = { dialogOpen = true },
         )
     }
 

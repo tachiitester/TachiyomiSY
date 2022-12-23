@@ -51,8 +51,8 @@ import eu.kanade.presentation.components.ChapterDownloadAction
 import eu.kanade.presentation.components.ExtendedFloatingActionButton
 import eu.kanade.presentation.components.LazyColumn
 import eu.kanade.presentation.components.MangaBottomActionMenu
+import eu.kanade.presentation.components.PullRefresh
 import eu.kanade.presentation.components.Scaffold
-import eu.kanade.presentation.components.SwipeRefresh
 import eu.kanade.presentation.components.TwoPanelBox
 import eu.kanade.presentation.components.VerticalFastScroller
 import eu.kanade.presentation.manga.components.ChapterHeader
@@ -303,8 +303,6 @@ private fun MangaScreenSmallImpl(
                 titleAlphaProvider = { animatedTitleAlpha },
                 backgroundAlphaProvider = { animatedBgAlpha },
                 hasFilters = state.manga.chaptersFiltered(),
-                incognitoMode = state.isIncognitoMode,
-                downloadedOnlyMode = state.isDownloadedOnlyMode,
                 onBackClicked = internalOnBackPressed,
                 onClickFilter = onFilterClicked,
                 onClickShare = onShareClicked,
@@ -358,7 +356,7 @@ private fun MangaScreenSmallImpl(
     ) { contentPadding ->
         val topPadding = contentPadding.calculateTopPadding()
 
-        SwipeRefresh(
+        PullRefresh(
             refreshing = state.isRefreshingData,
             onRefresh = onRefresh,
             enabled = chapters.fastAll { !it.selected },
@@ -559,7 +557,7 @@ fun MangaScreenLargeImpl(
 
     val insetPadding = WindowInsets.systemBars.only(WindowInsetsSides.Horizontal).asPaddingValues()
     var topBarHeight by remember { mutableStateOf(0) }
-    SwipeRefresh(
+    PullRefresh(
         refreshing = state.isRefreshingData,
         onRefresh = onRefresh,
         enabled = chapters.fastAll { !it.selected },
@@ -588,8 +586,6 @@ fun MangaScreenLargeImpl(
                     titleAlphaProvider = { if (chapters.fastAny { it.selected }) 1f else 0f },
                     backgroundAlphaProvider = { 1f },
                     hasFilters = state.manga.chaptersFiltered(),
-                    incognitoMode = state.isIncognitoMode,
-                    downloadedOnlyMode = state.isDownloadedOnlyMode,
                     onBackClicked = internalOnBackPressed,
                     onClickFilter = onFilterButtonClicked,
                     onClickShare = onShareClicked,

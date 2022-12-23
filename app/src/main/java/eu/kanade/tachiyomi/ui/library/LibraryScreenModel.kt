@@ -140,11 +140,7 @@ class LibraryScreenModel(
     // SY <--
 ) : StateScreenModel<LibraryScreenModel.State>(State()) {
 
-    // This is active category INDEX NUMBER
-    var activeCategory: Int by libraryPreferences.lastUsedCategory().asState(coroutineScope)
-
-    val isDownloadOnly: Boolean by preferences.downloadedOnly().asState(coroutineScope)
-    val isIncognitoMode: Boolean by preferences.incognitoMode().asState(coroutineScope)
+    var activeCategoryIndex: Int by libraryPreferences.lastUsedCategory().asState(coroutineScope)
 
     // SY -->
     val favoritesSync = FavoritesSyncHelper(preferences.context)
@@ -164,15 +160,21 @@ class LibraryScreenModel(
                 getTracksPerManga.subscribe(),
                 getTrackingFilterFlow(),
                 // SY -->
-                combine(state.map { it.groupType }.distinctUntilChanged(), libraryPreferences.libraryDisplayMode().changes()) { a, b -> a to b },
+                combine(
+                    state.map { it.groupType }.distinctUntilChanged(),
+                    libraryPreferences.libraryDisplayMode().changes(),
+                    libraryPreferences.librarySortingMode().changes(),
+                ) { a, b, c ->
+                    Triple(a, b, c)
+                },
                 // SY <--
-            ) { searchQuery, library, tracks, loggedInTrackServices, (groupType, displayMode) ->
+            ) { searchQuery, library, tracks, loggedInTrackServices, (groupType, displayMode, sort) ->
                 library
                     .applyFilters(tracks, loggedInTrackServices)
-                    .applySort(/* SY --> */groupType/* SY <-- */)
                     // SY -->
                     .applyGrouping(groupType, displayMode)
                     // SY <--
+                    .applySort(/* SY --> */sort.takeIf { groupType != LibraryGroup.BY_DEFAULT } /* SY <-- */)
                     .mapValues { (_, value) ->
                         if (searchQuery != null) {
                             // Filter query
@@ -395,7 +397,7 @@ class LibraryScreenModel(
     /**
      * Applies library sorting to the given map of manga.
      */
-    private fun LibraryMap.applySort(/* SY --> */ groupType: Int /* SY <-- */): LibraryMap {
+    private fun LibraryMap.applySort(/* SY --> */ groupSort: LibrarySort? = null /* SY <-- */): LibraryMap {
         // SY -->
         val listOfTags by lazy {
             libraryPreferences.sortTagsForLibrary().get()
@@ -408,7 +410,6 @@ class LibraryScreenModel(
                 .map { it.second }
                 .toList()
         }
-        val groupSort = libraryPreferences.librarySortingMode().get()
         // SY <--
 
         val locale = Locale.getDefault()
@@ -421,10 +422,7 @@ class LibraryScreenModel(
 
         val sortFn: (LibraryItem, LibraryItem) -> Int = { i1, i2 ->
             // SY -->
-            val sort = when (groupType) {
-                LibraryGroup.BY_DEFAULT -> keys.find { it.id == i1.libraryManga.category }!!.sort
-                else -> groupSort
-            }
+            val sort = groupSort ?: keys.find { it.id == i1.libraryManga.category }!!.sort
             // SY <--
             when (sort.type) {
                 LibrarySort.Type.Alphabetical -> {
@@ -467,11 +465,7 @@ class LibraryScreenModel(
 
         return this.mapValues { entry ->
             // SY -->
-            val isAscending = if (groupType == LibraryGroup.BY_DEFAULT) {
-                keys.find { it.id == entry.key.id }!!.sort.isAscending
-            } else {
-                groupSort.isAscending
-            }
+            val isAscending = groupSort?.isAscending ?: keys.find { it.id == entry.key.id }!!.sort.isAscending
             // SY <--
             val comparator = if ( /* SY --> */ isAscending /* SY <-- */) {
                 Comparator(sortFn)
@@ -862,8 +856,8 @@ class LibraryScreenModel(
     suspend fun getRandomLibraryItemForCurrentCategory(): LibraryItem? {
         return withIOContext {
             state.value
-                .getLibraryItemsByCategoryId(activeCategory.toLong())
-                .randomOrNull()
+                .getLibraryItemsByCategoryId(state.value.categories[activeCategoryIndex].id)
+                ?.randomOrNull()
         }
     }
 
@@ -1074,7 +1068,7 @@ class LibraryScreenModel(
                 }
 
                 val items = state.getLibraryItemsByCategoryId(manga.category)
-                    .fastMap { it.libraryManga }
+                    ?.fastMap { it.libraryManga }.orEmpty()
                 val lastMangaIndex = items.indexOf(lastSelected)
                 val curMangaIndex = items.indexOf(manga)
 
@@ -1099,12 +1093,11 @@ class LibraryScreenModel(
             val newSelection = state.selection.toMutableList().apply {
                 val categoryId = state.categories.getOrNull(index)?.id ?: -1
                 val selectedIds = fastMap { it.id }
-                val newSelections = state.getLibraryItemsByCategoryId(categoryId)
-                    .fastMapNotNull { item ->
+                state.getLibraryItemsByCategoryId(categoryId)
+                    ?.fastMapNotNull { item ->
                         item.libraryManga.takeUnless { it.id in selectedIds }
                     }
-
-                addAll(newSelections)
+                    ?.let { addAll(it) }
             }
             state.copy(selection = newSelection)
         }
@@ -1114,7 +1107,7 @@ class LibraryScreenModel(
         mutableState.update { state ->
             val newSelection = state.selection.toMutableList().apply {
                 val categoryId = state.categories[index].id
-                val items = state.getLibraryItemsByCategoryId(categoryId).fastMap { it.libraryManga }
+                val items = state.getLibraryItemsByCategoryId(categoryId)?.fastMap { it.libraryManga }.orEmpty()
                 val selectedIds = fastMap { it.id }
                 val (toRemove, toAdd) = items.fastPartition { it.id in selectedIds }
                 val toRemoveIds = toRemove.fastMap { it.id }
@@ -1175,7 +1168,11 @@ class LibraryScreenModel(
         return getNextChapters.await(manga.id).firstOrNull()
     }
 
-    private fun getGroupedMangaItems(groupType: Int, libraryManga: List<LibraryItem>, displayMode: LibraryDisplayMode): LibraryMap {
+    private fun getGroupedMangaItems(
+        groupType: Int,
+        libraryManga: List<LibraryItem>,
+        displayMode: LibraryDisplayMode,
+    ): LibraryMap {
         val context = preferences.context
         return when (groupType) {
             LibraryGroup.BY_TRACK_STATUS -> {
@@ -1309,16 +1306,18 @@ class LibraryScreenModel(
         val groupType: Int = LibraryGroup.BY_DEFAULT,
         // SY <--
     ) {
-        val selectionMode = selection.isNotEmpty()
-
-        val categories = library.keys.toList()
-
-        val libraryCount by lazy {
-            library
-                .flatMap { (_, v) -> v }
+        private val libraryCount by lazy {
+            library.values
+                .flatten()
                 .fastDistinctBy { it.libraryManga.manga.id }
                 .size
         }
+
+        val isLibraryEmpty by lazy { libraryCount == 0 }
+
+        val selectionMode = selection.isNotEmpty()
+
+        val categories = library.keys.toList()
 
         // SY -->
         val showCleanTitles: Boolean by lazy {
@@ -1333,8 +1332,8 @@ class LibraryScreenModel(
         }
         // SY <--
 
-        fun getLibraryItemsByCategoryId(categoryId: Long): List<LibraryItem> {
-            return library.firstNotNullOf { (k, v) -> v.takeIf { k.id == categoryId } }
+        fun getLibraryItemsByCategoryId(categoryId: Long): List<LibraryItem>? {
+            return library.firstNotNullOfOrNull { (k, v) -> v.takeIf { k.id == categoryId } }
         }
 
         fun getLibraryItemsByPage(page: Int): List<LibraryItem> {
@@ -1342,7 +1341,7 @@ class LibraryScreenModel(
         }
 
         fun getMangaCountForCategory(category: Category): Int? {
-            return library[category]?.size?.takeIf { showMangaCount }
+            return if (showMangaCount || !searchQuery.isNullOrEmpty()) library[category]?.size else null
         }
 
         fun getToolbarTitle(
@@ -1354,8 +1353,7 @@ class LibraryScreenModel(
             val categoryName = category.let {
                 if (it.isSystemCategory) defaultCategoryTitle else it.name
             }
-
-            val title = if (showCategoryTabs && categories.size <= 1) categoryName else defaultTitle
+            val title = if (showCategoryTabs) defaultTitle else categoryName
             val count = when {
                 !showMangaCount -> null
                 !showCategoryTabs -> getMangaCountForCategory(category)

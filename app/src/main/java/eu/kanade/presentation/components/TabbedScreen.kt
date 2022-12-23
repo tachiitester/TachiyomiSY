@@ -20,7 +20,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
-import eu.kanade.tachiyomi.widget.TachiyomiBottomNavigationView
 import kotlinx.coroutines.launch
 
 @Composable
@@ -30,8 +29,6 @@ fun TabbedScreen(
     startIndex: Int? = null,
     searchQuery: String? = null,
     onChangeSearchQuery: (String?) -> Unit = {},
-    incognitoMode: Boolean,
-    downloadedOnlyMode: Boolean,
 ) {
     val scope = rememberCoroutineScope()
     val state = rememberPagerState()
@@ -79,8 +76,6 @@ fun TabbedScreen(
                 }
             }
 
-            AppStateBanners(downloadedOnlyMode, incognitoMode)
-
             HorizontalPager(
                 count = tabs.size,
                 modifier = Modifier.fillMaxSize(),
@@ -88,9 +83,7 @@ fun TabbedScreen(
                 verticalAlignment = Alignment.Top,
             ) { page ->
                 tabs[page].content(
-                    TachiyomiBottomNavigationView.withBottomNavPadding(
-                        PaddingValues(bottom = contentPadding.calculateBottomPadding()),
-                    ),
+                    PaddingValues(bottom = contentPadding.calculateBottomPadding()),
                     snackbarHostState,
                 )
             }

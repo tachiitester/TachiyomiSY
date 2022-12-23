@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.outlined.PushPin
@@ -26,7 +28,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import eu.kanade.domain.source.interactor.GetRemoteManga
 import eu.kanade.domain.source.model.Pin
 import eu.kanade.domain.source.model.Source
 import eu.kanade.presentation.browse.components.BaseSourceItem
@@ -40,13 +41,14 @@ import eu.kanade.presentation.util.topSmallPaddingValues
 import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.source.LocalSource
 import eu.kanade.tachiyomi.ui.browse.source.SourcesState
+import eu.kanade.tachiyomi.ui.browse.source.browse.BrowseSourceScreenModel.Listing
 import eu.kanade.tachiyomi.util.system.LocaleHelper
 
 @Composable
 fun SourcesScreen(
     state: SourcesState,
     contentPadding: PaddingValues,
-    onClickItem: (Source, String) -> Unit,
+    onClickItem: (Source, Listing) -> Unit,
     onClickPin: (Source) -> Unit,
     onLongClickItem: (Source) -> Unit,
 ) {
@@ -134,18 +136,18 @@ private fun SourceItem(
     showLatest: Boolean,
     showPin: Boolean,
     // SY <--
-    onClickItem: (Source, String) -> Unit,
+    onClickItem: (Source, Listing) -> Unit,
     onLongClickItem: (Source) -> Unit,
     onClickPin: (Source) -> Unit,
 ) {
     BaseSourceItem(
         modifier = modifier,
         source = source,
-        onClickItem = { onClickItem(source, GetRemoteManga.QUERY_POPULAR) },
+        onClickItem = { onClickItem(source, Listing.Popular) },
         onLongClickItem = { onLongClickItem(source) },
         action = {
             if (source.supportsLatest /* SY --> */ && showLatest /* SY <-- */) {
-                TextButton(onClick = { onClickItem(source, GetRemoteManga.QUERY_LATEST) }) {
+                TextButton(onClick = { onClickItem(source, Listing.Latest) }) {
                     Text(
                         text = stringResource(R.string.latest),
                         style = LocalTextStyle.current.copy(
@@ -189,8 +191,8 @@ fun SourceOptionsDialog(
     onClickPin: () -> Unit,
     onClickDisable: () -> Unit,
     // SY -->
-    onClickSetCategories: () -> Unit,
-    onClickToggleDataSaver: () -> Unit,
+    onClickSetCategories: (() -> Unit)?,
+    onClickToggleDataSaver: (() -> Unit)?,
     // SY <--
     onDismiss: () -> Unit,
 ) {
@@ -218,24 +220,28 @@ fun SourceOptionsDialog(
                     )
                 }
                 // SY -->
-                Text(
-                    text = stringResource(id = R.string.categories),
-                    modifier = Modifier
-                        .clickable(onClick = onClickSetCategories)
-                        .fillMaxWidth()
-                        .padding(vertical = 16.dp),
-                )
-                Text(
-                    text = if (source.isExcludedFromDataSaver) {
-                        stringResource(id = R.string.data_saver_stop_exclude)
-                    } else {
-                        stringResource(id = R.string.data_saver_exclude)
-                    },
-                    modifier = Modifier
-                        .clickable(onClick = onClickToggleDataSaver)
-                        .fillMaxWidth()
-                        .padding(vertical = 16.dp),
-                )
+                if (onClickSetCategories != null) {
+                    Text(
+                        text = stringResource(id = R.string.categories),
+                        modifier = Modifier
+                            .clickable(onClick = onClickSetCategories)
+                            .fillMaxWidth()
+                            .padding(vertical = 16.dp),
+                    )
+                }
+                if (onClickToggleDataSaver != null) {
+                    Text(
+                        text = if (source.isExcludedFromDataSaver) {
+                            stringResource(id = R.string.data_saver_stop_exclude)
+                        } else {
+                            stringResource(id = R.string.data_saver_exclude)
+                        },
+                        modifier = Modifier
+                            .clickable(onClick = onClickToggleDataSaver)
+                            .fillMaxWidth()
+                            .padding(vertical = 16.dp),
+                    )
+                }
                 // SY <--
             }
         },
@@ -252,12 +258,11 @@ sealed class SourceUiModel {
 // SY -->
 @Composable
 fun SourceCategoriesDialog(
-    source: Source?,
+    source: Source,
     categories: List<String>,
     onClickCategories: (List<String>) -> Unit,
-    onDismiss: () -> Unit,
+    onDismissRequest: () -> Unit,
 ) {
-    source ?: return
     val newCategories = remember(source) {
         mutableStateListOf<String>().also { it += source.categories }
     }
@@ -266,7 +271,7 @@ fun SourceCategoriesDialog(
             Text(text = source.visualName)
         },
         text = {
-            Column {
+            Column(Modifier.verticalScroll(rememberScrollState())) {
                 categories.forEach {
                     Row(
                         modifier = Modifier
@@ -293,7 +298,7 @@ fun SourceCategoriesDialog(
                 }
             }
         },
-        onDismissRequest = onDismiss,
+        onDismissRequest = onDismissRequest,
         confirmButton = {
             TextButton(onClick = { onClickCategories(newCategories.toList()) }) {
                 Text(text = stringResource(android.R.string.ok))

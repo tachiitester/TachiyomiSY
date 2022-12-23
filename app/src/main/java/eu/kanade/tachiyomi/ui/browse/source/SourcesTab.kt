@@ -10,21 +10,20 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.res.stringResource
 import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.screen.Screen
+import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import eu.kanade.domain.source.interactor.GetRemoteManga.Companion.QUERY_POPULAR
 import eu.kanade.presentation.browse.SourceCategoriesDialog
 import eu.kanade.presentation.browse.SourceOptionsDialog
 import eu.kanade.presentation.browse.SourcesScreen
 import eu.kanade.presentation.components.AppBar
 import eu.kanade.presentation.components.TabContent
-import eu.kanade.presentation.util.LocalRouter
 import eu.kanade.tachiyomi.R
-import eu.kanade.tachiyomi.ui.base.controller.pushController
-import eu.kanade.tachiyomi.ui.browse.source.SourcesController.SmartSearchConfig
-import eu.kanade.tachiyomi.ui.browse.source.browse.BrowseSourceController
-import eu.kanade.tachiyomi.ui.browse.source.feed.SourceFeedController
-import eu.kanade.tachiyomi.ui.browse.source.globalsearch.GlobalSearchController
-import exh.ui.smartsearch.SmartSearchController
+import eu.kanade.tachiyomi.ui.browse.source.SourcesScreen.SmartSearchConfig
+import eu.kanade.tachiyomi.ui.browse.source.browse.BrowseSourceScreen
+import eu.kanade.tachiyomi.ui.browse.source.browse.BrowseSourceScreenModel.Listing
+import eu.kanade.tachiyomi.ui.browse.source.feed.SourceFeedScreen
+import eu.kanade.tachiyomi.ui.browse.source.globalsearch.GlobalSearchScreen
+import exh.ui.smartsearch.SmartSearchScreen
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
@@ -32,7 +31,7 @@ import kotlinx.coroutines.launch
 fun Screen.sourcesTab(
     smartSearchConfig: SmartSearchConfig? = null,
 ): TabContent {
-    val router = LocalRouter.currentOrThrow
+    val navigator = LocalNavigator.currentOrThrow
     val screenModel = rememberScreenModel { SourcesScreenModel(smartSearchConfig = smartSearchConfig) }
     val state by screenModel.state.collectAsState()
 
@@ -47,12 +46,12 @@ fun Screen.sourcesTab(
                 AppBar.Action(
                     title = stringResource(R.string.action_global_search),
                     icon = Icons.Outlined.TravelExplore,
-                    onClick = { router.pushController(GlobalSearchController()) },
+                    onClick = { navigator.push(GlobalSearchScreen()) },
                 ),
                 AppBar.Action(
                     title = stringResource(R.string.action_filter),
                     icon = Icons.Outlined.FilterList,
-                    onClick = { router.pushController(SourceFilterController()) },
+                    onClick = { navigator.push(SourcesFilterScreen()) },
                 ),
             )
         } else {
@@ -63,60 +62,58 @@ fun Screen.sourcesTab(
             SourcesScreen(
                 state = state,
                 contentPadding = contentPadding,
-                onClickItem = { source, query ->
+                onClickItem = { source, listing ->
                     // SY -->
-                    val controller = when {
-                        smartSearchConfig != null -> SmartSearchController(source.id, smartSearchConfig)
-                        (query.isBlank() || query == QUERY_POPULAR) && screenModel.useNewSourceNavigation -> SourceFeedController(source.id)
-                        else -> BrowseSourceController(source, query)
+                    val screen = when {
+                        smartSearchConfig != null -> SmartSearchScreen(source.id, smartSearchConfig)
+                        listing == Listing.Popular && screenModel.useNewSourceNavigation -> SourceFeedScreen(source.id)
+                        else -> BrowseSourceScreen(source.id, listing.query)
                     }
                     screenModel.onOpenSource(source)
-                    router.pushController(controller)
+                    navigator.push(screen)
                     // SY <--
                 },
                 onClickPin = screenModel::togglePin,
                 onLongClickItem = screenModel::showSourceDialog,
             )
 
-            state.dialog?.let { dialog ->
-                when (dialog) {
-                    is SourcesScreenModel.Dialog.SourceCategories -> {
-                        val source = dialog.source
-                        SourceOptionsDialog(
-                            source = source,
-                            onClickPin = {
-                                screenModel.togglePin(source)
-                                screenModel.closeDialog()
-                            },
-                            onClickDisable = {
-                                screenModel.toggleSource(source)
-                                screenModel.closeDialog()
-                            },
-                            // SY -->
-                            onClickSetCategories = {
-                                screenModel.showSourceCategoriesDialog(source)
-                                screenModel.closeDialog()
-                            },
-                            onClickToggleDataSaver = {
-                                screenModel.toggleExcludeFromDataSaver(source)
-                                screenModel.closeDialog()
-                            },
-                            onDismiss = screenModel::closeDialog,
-                        )
-                    }
-                    is SourcesScreenModel.Dialog.SourceLongClick -> {
-                        val source = dialog.source
-                        SourceCategoriesDialog(
-                            source = source,
-                            categories = state.categories,
-                            onClickCategories = { categories ->
-                                screenModel.setSourceCategories(source, categories)
-                                screenModel.closeDialog()
-                            },
-                            onDismiss = screenModel::closeDialog,
-                        )
-                    }
+            when (val dialog = state.dialog) {
+                is SourcesScreenModel.Dialog.SourceLongClick -> {
+                    val source = dialog.source
+                    SourceOptionsDialog(
+                        source = source,
+                        onClickPin = {
+                            screenModel.togglePin(source)
+                            screenModel.closeDialog()
+                        },
+                        onClickDisable = {
+                            screenModel.toggleSource(source)
+                            screenModel.closeDialog()
+                        },
+                        // SY -->
+                        onClickSetCategories = {
+                            screenModel.showSourceCategoriesDialog(source)
+                        }.takeIf { state.categories.isNotEmpty() },
+                        onClickToggleDataSaver = {
+                            screenModel.toggleExcludeFromDataSaver(source)
+                            screenModel.closeDialog()
+                        }.takeIf { state.dataSaverEnabled },
+                        onDismiss = screenModel::closeDialog,
+                    )
                 }
+                is SourcesScreenModel.Dialog.SourceCategories -> {
+                    val source = dialog.source
+                    SourceCategoriesDialog(
+                        source = source,
+                        categories = state.categories,
+                        onClickCategories = { categories ->
+                            screenModel.setSourceCategories(source, categories)
+                            screenModel.closeDialog()
+                        },
+                        onDismissRequest = screenModel::closeDialog,
+                    )
+                }
+                null -> Unit
             }
 
             val internalErrString = stringResource(R.string.internal_error)

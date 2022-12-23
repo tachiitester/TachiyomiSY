@@ -1,5 +1,6 @@
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.jmailen.gradle.kotlinter.tasks.LintTask
 
 plugins {
     id("com.android.application")
@@ -30,7 +31,7 @@ android {
         applicationId = "eu.kanade.tachiyomi.sy"
         minSdk = AndroidConfig.minSdk
         targetSdk = AndroidConfig.targetSdk
-        versionCode = 43
+        versionCode = 44
         versionName = "1.8.5"
 
         buildConfigField("String", "COMMIT_COUNT", "\"${getCommitCount()}\"")
@@ -169,7 +170,6 @@ dependencies {
     implementation(compose.activity)
     implementation(compose.foundation)
     implementation(compose.material3.core)
-    implementation(compose.material3.adapter)
     implementation(compose.material.core)
     implementation(compose.material.icons)
     implementation(compose.animation)
@@ -177,15 +177,15 @@ dependencies {
     implementation(compose.ui.tooling)
     implementation(compose.ui.util)
     implementation(compose.accompanist.webview)
-    implementation(compose.accompanist.swiperefresh)
     implementation(compose.accompanist.flowlayout)
     implementation(compose.accompanist.permissions)
+    implementation(compose.accompanist.themeadapter)
+    implementation(compose.accompanist.systemuicontroller)
 
     implementation(androidx.paging.runtime)
     implementation(androidx.paging.compose)
 
     implementation(libs.bundles.sqlite)
-    implementation(androidx.sqlite)
     implementation(libs.sqldelight.android.driver)
     implementation(libs.sqldelight.coroutines)
     implementation(libs.sqldelight.android.paging)
@@ -238,15 +238,11 @@ dependencies {
     // Preferences
     implementation(libs.preferencektx)
 
-    // Model View Presenter
-    implementation(libs.bundles.nucleus)
-
     // Dependency injection
     implementation(libs.injekt.core)
 
     // Image loading
     implementation(libs.bundles.coil)
-
     implementation(libs.subsamplingscaleimageview) {
         exclude(module = "image-decoder")
     }
@@ -264,17 +260,12 @@ dependencies {
         exclude(group = "androidx.viewpager", module = "viewpager")
     }
     implementation(libs.insetter)
-    implementation(libs.markwon)
+    implementation(libs.bundles.richtext)
     implementation(libs.aboutLibraries.compose)
     implementation(libs.cascade)
     implementation(libs.bundles.voyager)
     implementation(libs.wheelpicker)
-
-    // Conductor
-    implementation(libs.bundles.conductor)
-
-    // FlowBinding
-    implementation(libs.flowbinding.android)
+    implementation(libs.materialmotion.core)
 
     // Logging
     implementation(libs.logcat)
@@ -294,9 +285,6 @@ dependencies {
     implementation(libs.leakcanary.plumber)
 
     // SY -->
-    // Changelog
-    implementation(sylibs.changelog)
-
     // Text distance (EH)
     implementation (sylibs.simularity)
 
@@ -306,13 +294,6 @@ dependencies {
 
     // Better logging (EH)
     implementation(sylibs.xlog)
-
-    // Debug utils (EH)
-    debugImplementation(sylibs.debugOverlay.standard)
-    "releaseTestImplementation"(sylibs.debugOverlay.noop)
-    "benchmarkImplementation"(sylibs.debugOverlay.noop)
-    releaseImplementation(sylibs.debugOverlay.noop)
-    testImplementation(sylibs.debugOverlay.noop)
 
     // RatingBar (SY)
     implementation(sylibs.ratingbar)
@@ -341,7 +322,7 @@ tasks {
         }
     }
 
-    withType<org.jmailen.gradle.kotlinter.tasks.LintTask>().configureEach {
+    withType<LintTask>().configureEach {
         exclude { it.file.path.contains("generated[\\\\/]".toRegex()) }
     }
 
@@ -350,8 +331,10 @@ tasks {
         kotlinOptions.freeCompilerArgs += listOf(
             "-opt-in=coil.annotation.ExperimentalCoilApi",
             "-opt-in=com.google.accompanist.permissions.ExperimentalPermissionsApi",
+            "-opt-in=androidx.compose.foundation.layout.ExperimentalLayoutApi",
             "-opt-in=androidx.compose.material.ExperimentalMaterialApi",
             "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api",
+            "-opt-in=androidx.compose.material.ExperimentalMaterialApi",
             "-opt-in=androidx.compose.ui.ExperimentalComposeUiApi",
             "-opt-in=androidx.compose.foundation.ExperimentalFoundationApi",
             "-opt-in=androidx.compose.animation.ExperimentalAnimationApi",

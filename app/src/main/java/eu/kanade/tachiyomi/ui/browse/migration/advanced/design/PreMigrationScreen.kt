@@ -3,7 +3,6 @@ package eu.kanade.tachiyomi.ui.browse.migration.advanced.design
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowForward
 import androidx.compose.material.icons.outlined.Deselect
@@ -45,7 +44,6 @@ import eu.kanade.presentation.components.AppBar
 import eu.kanade.presentation.components.ExtendedFloatingActionButton
 import eu.kanade.presentation.components.OverflowMenu
 import eu.kanade.presentation.components.Scaffold
-import eu.kanade.presentation.util.LocalRouter
 import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.databinding.PreMigrationListBinding
 import eu.kanade.tachiyomi.ui.browse.migration.advanced.process.MigrationListScreen
@@ -58,7 +56,6 @@ class PreMigrationScreen(val mangaIds: List<Long>) : Screen {
     override fun Content() {
         val screenModel = rememberScreenModel { PreMigrationScreenModel() }
         val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
-        val router = LocalRouter.currentOrThrow
         val navigator = LocalNavigator.currentOrThrow
         var fabExpanded by remember { mutableStateOf(true) }
         val items by screenModel.state.collectAsState()
@@ -99,12 +96,7 @@ class PreMigrationScreen(val mangaIds: List<Long>) : Screen {
             topBar = {
                 AppBar(
                     title = stringResource(R.string.select_sources),
-                    navigateUp = {
-                        when {
-                            navigator.canPop -> navigator.pop()
-                            else -> router.popCurrentController()
-                        }
-                    },
+                    navigateUp = navigator::pop,
                     scrollBehavior = scrollBehavior,
                     actions = {
                         IconButton(onClick = { screenModel.massSelect(false) }) {
@@ -153,7 +145,6 @@ class PreMigrationScreen(val mangaIds: List<Long>) : Screen {
                         }
                     },
                     expanded = fabExpanded,
-                    modifier = Modifier.navigationBarsPadding(),
                 )
             },
         ) { contentPadding ->

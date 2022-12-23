@@ -3,13 +3,10 @@ package eu.kanade.tachiyomi.ui.browse.source.feed
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.State
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.coroutineScope
 import eu.davidea.flexibleadapter.items.IFlexible
-import eu.kanade.core.prefs.asState
-import eu.kanade.domain.base.BasePreferences
 import eu.kanade.domain.manga.interactor.GetManga
 import eu.kanade.domain.manga.interactor.NetworkToLocalManga
 import eu.kanade.domain.manga.interactor.UpdateManga
@@ -49,16 +46,9 @@ import xyz.nulldev.ts.api.http.serializer.FilterSerializer
 import java.util.concurrent.Executors
 import eu.kanade.domain.manga.model.Manga as DomainManga
 
-/**
- * Presenter of [SourceFeedController]
- * Function calls should be done from here. UI calls should be done from the controller.
- *
- * @param source the source.
- */
 open class SourceFeedScreenModel(
     val sourceId: Long,
     private val sourceManager: SourceManager = Injekt.get(),
-    private val preferences: BasePreferences = Injekt.get(),
     private val getManga: GetManga = Injekt.get(),
     private val networkToLocalManga: NetworkToLocalManga = Injekt.get(),
     private val updateManga: UpdateManga = Injekt.get(),
@@ -71,9 +61,6 @@ open class SourceFeedScreenModel(
 ) : StateScreenModel<SourceFeedState>(SourceFeedState()) {
 
     val source = sourceManager.getOrStub(sourceId) as CatalogueSource
-
-    val isDownloadOnly: Boolean by preferences.downloadedOnly().asState(coroutineScope)
-    val isIncognitoMode: Boolean by preferences.incognitoMode().asState(coroutineScope)
 
     private val coroutineDispatcher = Executors.newFixedThreadPool(5).asCoroutineDispatcher()
 

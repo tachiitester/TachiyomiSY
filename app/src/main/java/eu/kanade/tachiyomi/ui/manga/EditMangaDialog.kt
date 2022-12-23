@@ -32,14 +32,12 @@ import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.databinding.EditMangaDialogBinding
 import eu.kanade.tachiyomi.source.model.SManga
 import eu.kanade.tachiyomi.util.lang.chop
+import eu.kanade.tachiyomi.util.system.dpToPx
 import eu.kanade.tachiyomi.util.system.getResourceColor
 import eu.kanade.tachiyomi.widget.materialdialogs.setTextInput
 import exh.util.dropBlank
 import exh.util.trimOrNull
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
-import reactivecircus.flowbinding.android.view.clicks
 
 @Composable
 fun EditMangaDialog(
@@ -82,6 +80,7 @@ fun EditMangaDialog(
                             }
                         }?.toLong(),
                     )
+                    onDismissRequest()
                 },
             ) {
                 Text(stringResource(R.string.action_save))
@@ -189,9 +188,7 @@ private fun onViewCreated(manga: Manga, context: Context, binding: EditMangaDial
     }
     binding.mangaGenresTags.clearFocus()
 
-    binding.resetTags.clicks()
-        .onEach { resetTags(manga, binding, scope) }
-        .launchIn(scope)
+    binding.resetTags.setOnClickListener { resetTags(manga, binding, scope) }
 }
 
 private fun resetTags(manga: Manga, binding: EditMangaDialogBinding, scope: CoroutineScope) {
@@ -203,9 +200,8 @@ private fun resetTags(manga: Manga, binding: EditMangaDialogBinding, scope: Coro
 }
 
 private fun loadCover(manga: Manga, context: Context, binding: EditMangaDialogBinding) {
-    val radius = context.resources.getDimension(R.dimen.card_radius)
     binding.mangaCover.load(manga) {
-        transformations(RoundedCornersTransformation(radius))
+        transformations(RoundedCornersTransformation(4.dpToPx.toFloat()))
     }
 }
 
@@ -234,7 +230,7 @@ private fun ChipGroup.setChips(items: List<String>, scope: CoroutineScope) {
             setTint(context.getResourceColor(R.attr.colorAccent))
         }
 
-        clicks().onEach {
+        setOnClickListener {
             var newTag: String? = null
             MaterialAlertDialogBuilder(context)
                 .setTitle(R.string.add_tag)
@@ -246,7 +242,7 @@ private fun ChipGroup.setChips(items: List<String>, scope: CoroutineScope) {
                 }
                 .setNegativeButton(android.R.string.cancel, null)
                 .show()
-        }.launchIn(scope)
+        }
     }
     addView(addTagChip)
 }

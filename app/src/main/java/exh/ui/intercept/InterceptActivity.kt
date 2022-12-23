@@ -26,8 +26,8 @@ import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.source.online.UrlImportableSource
 import eu.kanade.tachiyomi.ui.base.activity.BaseActivity
 import eu.kanade.tachiyomi.ui.main.MainActivity
-import eu.kanade.tachiyomi.ui.manga.MangaController
 import eu.kanade.tachiyomi.ui.reader.ReaderActivity
+import eu.kanade.tachiyomi.util.Constants
 import eu.kanade.tachiyomi.util.view.setComposeContent
 import exh.GalleryAddEvent
 import exh.GalleryAdder
@@ -44,6 +44,7 @@ class InterceptActivity : BaseActivity() {
     private val status: MutableStateFlow<InterceptResult> = MutableStateFlow(InterceptResult.Idle)
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        overridePendingTransition(R.anim.shared_axis_x_push_enter, R.anim.shared_axis_x_push_exit)
         super.onCreate(savedInstanceState)
 
         setComposeContent {
@@ -113,7 +114,7 @@ class InterceptActivity : BaseActivity() {
                                 Intent(this, MainActivity::class.java)
                                     .setAction(MainActivity.SHORTCUT_MANGA)
                                     .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                                    .putExtra(MangaController.MANGA_EXTRA, it.mangaId)
+                                    .putExtra(Constants.MANGA_EXTRA, it.mangaId)
                             },
                         )
                     }
@@ -135,6 +136,11 @@ class InterceptActivity : BaseActivity() {
     override fun onStop() {
         super.onStop()
         statusJob?.cancel()
+    }
+
+    override fun finish() {
+        super.finish()
+        overridePendingTransition(R.anim.shared_axis_x_pop_enter, R.anim.shared_axis_x_pop_exit)
     }
 
     private val galleryAdder = GalleryAdder()

@@ -27,13 +27,13 @@ import eu.kanade.domain.manga.interactor.InsertFlatMetadata
 import eu.kanade.domain.manga.interactor.NetworkToLocalManga
 import eu.kanade.domain.manga.interactor.UpdateManga
 import eu.kanade.domain.manga.model.Manga
-import eu.kanade.domain.manga.model.toDbManga
 import eu.kanade.domain.manga.model.toMangaUpdate
 import eu.kanade.domain.track.interactor.GetTracks
 import eu.kanade.domain.track.interactor.InsertTrack
 import eu.kanade.domain.track.model.toDbTrack
 import eu.kanade.domain.track.model.toDomainTrack
 import eu.kanade.tachiyomi.R
+import eu.kanade.tachiyomi.core.preference.getAndSet
 import eu.kanade.tachiyomi.data.cache.CoverCache
 import eu.kanade.tachiyomi.data.download.DownloadManager
 import eu.kanade.tachiyomi.data.download.DownloadService
@@ -401,7 +401,6 @@ class LibraryUpdateService(
         val failedUpdates = CopyOnWriteArrayList<Pair<Manga, String?>>()
         val hasDownloads = AtomicBoolean(false)
         val loggedServices by lazy { trackManager.services.filter { it.isLogged } }
-        val currentUnreadUpdatesCount = libraryPreferences.unreadUpdatesCount().get()
         val restrictions = libraryPreferences.libraryUpdateMangaRestriction().get()
 
         withIOContext {
@@ -455,6 +454,8 @@ class LibraryUpdateService(
                                                         hasDownloads.set(true)
                                                     }
 
+                                                    libraryPreferences.newUpdatesCount().getAndSet { it + newChapters.size }
+
                                                     // Convert to the manga that contains new chapters
                                                     newUpdates.add(manga to newChapters.toTypedArray())
                                                 }
@@ -485,8 +486,6 @@ class LibraryUpdateService(
 
         if (newUpdates.isNotEmpty()) {
             notifier.showUpdateNotifications(newUpdates)
-            val newChapterCount = newUpdates.sumOf { it.second.size }
-            libraryPreferences.unreadUpdatesCount().set(currentUnreadUpdatesCount + newChapterCount)
             if (hasDownloads.get()) {
                 DownloadService.start(this)
             }
@@ -549,7 +548,7 @@ class LibraryUpdateService(
             scope?.launch(handler) {
                 val tracks = getTracks.await(manga.id)
                 if (tracks.isEmpty() || tracks.none { it.syncId == TrackManager.MDLIST }) {
-                    val track = trackManager.mdList.createInitialTracker(manga.toDbManga())
+                    val track = trackManager.mdList.createInitialTracker(manga)
                     insertTrack.await(trackManager.mdList.refresh(track).toDomainTrack(false)!!)
                 }
             }
@@ -770,7 +769,7 @@ class LibraryUpdateService(
                 val dbTracks = getTracks.await(manga.id)
 
                 // find the mdlist entry if its unfollowed the follow it
-                val tracker = TrackItem(dbTracks.firstOrNull { it.syncId == TrackManager.MDLIST }?.toDbTrack() ?: trackManager.mdList.createInitialTracker(manga.toDbManga()), trackManager.mdList)
+                val tracker = TrackItem(dbTracks.firstOrNull { it.syncId == TrackManager.MDLIST }?.toDbTrack() ?: trackManager.mdList.createInitialTracker(manga), trackManager.mdList)
 
                 if (tracker.track?.status == FollowStatus.UNFOLLOWED.int) {
                     tracker.track.status = FollowStatus.READING.int

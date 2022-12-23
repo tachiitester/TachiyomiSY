@@ -145,6 +145,7 @@
     <string name="action_webview_refresh">Refresh</string>
     <string name="action_start_downloading_now">Start downloading now</string>
     <string name="action_faq_and_guides">FAQ and Guides</string>
+    <string name="action_not_now">Not now</string>
 
     <!-- Operations -->
     <string name="loading">Loading…</string>
@@ -870,6 +871,7 @@
     <string name="information_no_recent">No recent updates</string>
     <string name="information_no_recent_manga">Nothing read recently</string>
     <string name="information_empty_library">Your library is empty</string>
+    <string name="information_no_manga_category">Category is empty</string>
     <string name="information_no_entries_found">No entries found in this category</string>
     <string name="getting_started_guide">Getting started guide</string>
     <string name="information_empty_category">You have no categories. Tap the plus button to create one for organizing your library.</string>
