@@ -13,15 +13,14 @@ import eu.kanade.tachiyomi.ui.reader.model.ReaderPage
 import eu.kanade.tachiyomi.ui.reader.viewer.ReaderPageImageView
 import eu.kanade.tachiyomi.ui.reader.viewer.ReaderProgressIndicator
 import eu.kanade.tachiyomi.ui.webview.WebViewActivity
-import eu.kanade.tachiyomi.util.lang.launchUI
 import eu.kanade.tachiyomi.util.system.ImageUtil
 import eu.kanade.tachiyomi.util.system.logcat
 import eu.kanade.tachiyomi.widget.ViewPagerAdapter
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 import logcat.LogPriority
 import rx.Observable
 import rx.Subscription
@@ -65,7 +64,7 @@ class PagerPageHolder(
      */
     private var errorLayout: ReaderErrorBinding? = null
 
-    private val scope = CoroutineScope(Dispatchers.IO)
+    private val scope = MainScope()
 
     /**
      * Subscription for status changes of the page.
@@ -144,7 +143,7 @@ class PagerPageHolder(
 
     private fun launchProgressJob() {
         progressJob?.cancel()
-        progressJob = scope.launchUI {
+        progressJob = scope.launch {
             page.progressFlow.collectLatest { value -> progressIndicator.setProgress(value) }
         }
     }
@@ -152,7 +151,7 @@ class PagerPageHolder(
     private fun launchProgressJob2() {
         extraProgressJob?.cancel()
         val extraPage = extraPage ?: return
-        extraProgressJob = scope.launchUI {
+        extraProgressJob = scope.launch {
             extraPage.progressFlow.collectLatest { value -> progressIndicator.setProgress(((page.progressFlow.value + value) / 2 * 0.95f).roundToInt()) }
         }
     }
@@ -343,13 +342,13 @@ class PagerPageHolder(
     private fun mergePages(imageStream: InputStream, imageStream2: InputStream?): InputStream {
         // Handle adding a center margin to wide images if requested
         if (imageStream2 == null) {
-            if (imageStream is BufferedInputStream && ImageUtil.isWideImage(imageStream) &&
+            return if (imageStream is BufferedInputStream && ImageUtil.isWideImage(imageStream) &&
                 viewer.config.centerMarginType and PagerConfig.CenterMarginType.WIDE_PAGE_CENTER_MARGIN > 0 &&
                 !viewer.config.imageCropBorders
             ) {
-                return ImageUtil.AddHorizontalCenterMargin(imageStream, getHeight(), context)
+                ImageUtil.addHorizontalCenterMargin(imageStream, height, context)
             } else {
-                return imageStream
+                imageStream
             }
         }
 
@@ -379,7 +378,7 @@ class PagerPageHolder(
             logcat(LogPriority.ERROR) { "Cannot combine pages" }
             return imageBytes.inputStream()
         }
-        viewer.scope.launchUI { progressIndicator.setProgress(96) }
+        scope.launch { progressIndicator.setProgress(96) }
         val height = imageBitmap.height
         val width = imageBitmap.width
 
@@ -407,7 +406,7 @@ class PagerPageHolder(
             logcat(LogPriority.ERROR) { "Cannot combine pages" }
             return imageBytes.inputStream()
         }
-        viewer.scope.launchUI { progressIndicator.setProgress(97) }
+        scope.launch { progressIndicator.setProgress(97) }
         val height2 = imageBitmap2.height
         val width2 = imageBitmap2.width
 
@@ -424,16 +423,14 @@ class PagerPageHolder(
         imageStream.close()
         imageStream2.close()
 
-        val centerMargin = if (viewer.config.centerMarginType and PagerConfig.CenterMarginType.DOUBLE_PAGE_CENTER_MARGIN > 0 &&
-            !viewer.config.imageCropBorders
-        ) {
-            96 / (max(1, getHeight()) / max(height, height2))
+        val centerMargin = if (viewer.config.centerMarginType and PagerConfig.CenterMarginType.DOUBLE_PAGE_CENTER_MARGIN > 0 && !viewer.config.imageCropBorders) {
+            96 / (getHeight().coerceAtLeast(1) / max(height, height2).coerceAtLeast(1)).coerceAtLeast(1)
         } else {
             0
         }
 
         return ImageUtil.mergeBitmaps(imageBitmap, imageBitmap2, isLTR, centerMargin, viewer.config.pageCanvasColor) {
-            viewer.scope.launchUI {
+            scope.launch {
                 if (it == 100) {
                     progressIndicator.hide()
                 } else {
@@ -444,7 +441,7 @@ class PagerPageHolder(
     }
 
     private fun splitDoublePages() {
-        viewer.scope.launchUI {
+        scope.launch {
             delay(100)
             viewer.splitDoublePages(page)
             if (extraPage?.fullPage == true || page.fullPage) {

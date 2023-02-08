@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -53,8 +54,10 @@ fun LibraryContent(
             end = contentPadding.calculateEndPadding(LocalLayoutDirection.current),
         ),
     ) {
-        val coercedCurrentPage = remember { currentPage().coerceAtMost(categories.lastIndex) }
-        val pagerState = rememberPagerState(coercedCurrentPage)
+        // SY -->
+        val coercedCurrentPage = remember(categories) { currentPage().coerceIn(0, categories.lastIndex) }
+        val pagerState = key(categories) { rememberPagerState(coercedCurrentPage) }
+        // SY <--
 
         val scope = rememberCoroutineScope()
         var isRefreshing by remember(pagerState.currentPage) { mutableStateOf(false) }
@@ -79,7 +82,7 @@ fun LibraryContent(
         PullRefresh(
             refreshing = isRefreshing,
             onRefresh = {
-                val started = onRefresh(categories[currentPage()])
+                val started = onRefresh(categories.getOrNull(currentPage()) ?: return@PullRefresh)
                 if (!started) return@PullRefresh
                 scope.launch {
                     // Fake refresh status but hide it after a second as it's a long running task

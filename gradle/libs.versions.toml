@@ -1,6 +1,6 @@
 [versions]
 aboutlib_version = "10.5.2"
-okhttp_version = "5.0.0-alpha.10"
+okhttp_version = "5.0.0-alpha.11"
 coil_version = "2.2.2"
 shizuku_version = "12.2.0"
 sqlite = "2.3.0-rc01"
@@ -100,5 +100,5 @@ voyager = ["voyager-navigator", "voyager-tab-navigator", "voyager-transitions"]
 richtext = ["richtext-commonmark", "richtext-m3"]
 
 [plugins]
-kotlinter = { id = "org.jmailen.kotlinter", version = "3.12.0" }
+kotlinter = { id = "org.jmailen.kotlinter", version = "3.13.0" }
 versionsx = { id = "com.github.ben-manes.versions", version = "0.42.0" }
