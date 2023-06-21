@@ -1,17 +1,6 @@
 package eu.kanade.presentation.more.settings.screen
 
 import androidx.annotation.StringRes
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.size
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.collectAsState
@@ -21,45 +10,38 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.DpSize
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastMap
 import androidx.core.content.ContextCompat
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import com.commandiron.wheel_picker_compose.WheelPicker
-import eu.kanade.domain.UnsortedPreferences
-import eu.kanade.domain.category.interactor.GetCategories
-import eu.kanade.domain.category.interactor.ResetCategoryFlags
-import eu.kanade.domain.category.model.Category
-import eu.kanade.domain.library.model.GroupLibraryMode
-import eu.kanade.domain.library.service.LibraryPreferences
 import eu.kanade.presentation.category.visualName
 import eu.kanade.presentation.more.settings.Preference
 import eu.kanade.presentation.more.settings.widget.TriStateListDialog
 import eu.kanade.presentation.util.collectAsState
 import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.data.library.LibraryUpdateJob
-import eu.kanade.tachiyomi.data.preference.DEVICE_BATTERY_NOT_LOW
-import eu.kanade.tachiyomi.data.preference.DEVICE_CHARGING
-import eu.kanade.tachiyomi.data.preference.DEVICE_NETWORK_NOT_METERED
-import eu.kanade.tachiyomi.data.preference.DEVICE_ONLY_ON_WIFI
-import eu.kanade.tachiyomi.data.preference.MANGA_HAS_UNREAD
-import eu.kanade.tachiyomi.data.preference.MANGA_NON_COMPLETED
-import eu.kanade.tachiyomi.data.preference.MANGA_NON_READ
 import eu.kanade.tachiyomi.data.track.TrackManager
 import eu.kanade.tachiyomi.ui.category.CategoryScreen
 import eu.kanade.tachiyomi.ui.category.genre.SortTagScreen
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import tachiyomi.domain.UnsortedPreferences
+import tachiyomi.domain.category.interactor.GetCategories
+import tachiyomi.domain.category.interactor.ResetCategoryFlags
+import tachiyomi.domain.category.model.Category
+import tachiyomi.domain.library.model.GroupLibraryMode
+import tachiyomi.domain.library.service.LibraryPreferences
+import tachiyomi.domain.library.service.LibraryPreferences.Companion.DEVICE_BATTERY_NOT_LOW
+import tachiyomi.domain.library.service.LibraryPreferences.Companion.DEVICE_CHARGING
+import tachiyomi.domain.library.service.LibraryPreferences.Companion.DEVICE_NETWORK_NOT_METERED
+import tachiyomi.domain.library.service.LibraryPreferences.Companion.DEVICE_ONLY_ON_WIFI
+import tachiyomi.domain.library.service.LibraryPreferences.Companion.MANGA_HAS_UNREAD
+import tachiyomi.domain.library.service.LibraryPreferences.Companion.MANGA_NON_COMPLETED
+import tachiyomi.domain.library.service.LibraryPreferences.Companion.MANGA_NON_READ
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 
@@ -79,47 +61,14 @@ object SettingsLibraryScreen : SearchableSettings {
         val unsortedPreferences = remember { Injekt.get<UnsortedPreferences>() }
         // SY <--
 
-        return mutableListOf(
-            getDisplayGroup(libraryPreferences),
+        return listOf(
             getCategoriesGroup(LocalNavigator.currentOrThrow, allCategories, libraryPreferences),
             getGlobalUpdateGroup(allCategories, libraryPreferences),
+            getChapterSwipeActionsGroup(libraryPreferences),
             // SY -->
             getSortingCategory(LocalNavigator.currentOrThrow, libraryPreferences),
             getMigrationCategory(unsortedPreferences),
             // SY <--
-        )
-    }
-
-    @Composable
-    private fun getDisplayGroup(libraryPreferences: LibraryPreferences): Preference.PreferenceGroup {
-        val scope = rememberCoroutineScope()
-        val portraitColumns by libraryPreferences.portraitColumns().stateIn(scope).collectAsState()
-        val landscapeColumns by libraryPreferences.landscapeColumns().stateIn(scope).collectAsState()
-
-        var showDialog by rememberSaveable { mutableStateOf(false) }
-        if (showDialog) {
-            LibraryColumnsDialog(
-                initialPortrait = portraitColumns,
-                initialLandscape = landscapeColumns,
-                onDismissRequest = { showDialog = false },
-                onValueChanged = { portrait, landscape ->
-                    libraryPreferences.portraitColumns().set(portrait)
-                    libraryPreferences.landscapeColumns().set(landscape)
-                    showDialog = false
-                },
-            )
-        }
-
-        return Preference.PreferenceGroup(
-            title = stringResource(R.string.pref_category_display),
-            preferenceItems = listOf(
-                Preference.PreferenceItem.TextPreference(
-                    title = stringResource(R.string.pref_library_columns),
-                    subtitle = "${stringResource(R.string.portrait)}: ${getColumnValue(portraitColumns)}, " +
-                        "${stringResource(R.string.landscape)}: ${getColumnValue(landscapeColumns)}",
-                    onClick = { showDialog = true },
-                ),
-            ),
         )
     }
 
@@ -291,133 +240,34 @@ object SettingsLibraryScreen : SearchableSettings {
     }
 
     @Composable
-    private fun LibraryColumnsDialog(
-        initialPortrait: Int,
-        initialLandscape: Int,
-        onDismissRequest: () -> Unit,
-        onValueChanged: (portrait: Int, landscape: Int) -> Unit,
-    ) {
-        var portraitValue by rememberSaveable { mutableStateOf(initialPortrait) }
-        var landscapeValue by rememberSaveable { mutableStateOf(initialLandscape) }
-
-        AlertDialog(
-            onDismissRequest = onDismissRequest,
-            title = { Text(text = stringResource(R.string.pref_library_columns)) },
-            text = {
-                Column {
-                    Row {
-                        Text(
-                            modifier = Modifier.weight(1f),
-                            text = stringResource(R.string.portrait),
-                            textAlign = TextAlign.Center,
-                            maxLines = 1,
-                            style = MaterialTheme.typography.labelMedium,
-                        )
-                        Text(
-                            modifier = Modifier.weight(1f),
-                            text = stringResource(R.string.landscape),
-                            textAlign = TextAlign.Center,
-                            maxLines = 1,
-                            style = MaterialTheme.typography.labelMedium,
-                        )
-                    }
-                    LibraryColumnsPicker(
-                        modifier = Modifier.fillMaxWidth(),
-                        portraitValue = portraitValue,
-                        onPortraitChange = { portraitValue = it },
-                        landscapeValue = landscapeValue,
-                        onLandscapeChange = { landscapeValue = it },
-                    )
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = onDismissRequest) {
-                    Text(text = stringResource(R.string.action_cancel))
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { onValueChanged(portraitValue, landscapeValue) }) {
-                    Text(text = stringResource(android.R.string.ok))
-                }
-            },
-        )
-    }
-
-    @Composable
-    private fun LibraryColumnsPicker(
-        modifier: Modifier = Modifier,
-        portraitValue: Int,
-        onPortraitChange: (Int) -> Unit,
-        landscapeValue: Int,
-        onLandscapeChange: (Int) -> Unit,
-    ) {
-        BoxWithConstraints(
-            modifier = modifier,
-            contentAlignment = Alignment.Center,
-        ) {
-            Surface(
-                modifier = Modifier.size(maxWidth, maxHeight / 3),
-                shape = MaterialTheme.shapes.large,
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
-            ) {}
-
-            val size = DpSize(width = maxWidth / 2, height = 128.dp)
-            Row {
-                WheelPicker(
-                    size = size,
-                    count = 11,
-                    startIndex = portraitValue,
-                    onScrollFinished = {
-                        onPortraitChange(it)
-                        null
-                    },
-                ) { index, snappedIndex ->
-                    ColumnPickerLabel(index = index, snappedIndex = snappedIndex)
-                }
-                WheelPicker(
-                    size = size,
-                    count = 11,
-                    startIndex = landscapeValue,
-                    onScrollFinished = {
-                        onLandscapeChange(it)
-                        null
-                    },
-                ) { index, snappedIndex ->
-                    ColumnPickerLabel(index = index, snappedIndex = snappedIndex)
-                }
-            }
-        }
-    }
-
-    @Composable
-    private fun ColumnPickerLabel(
-        index: Int,
-        snappedIndex: Int,
-    ) {
-        Text(
-            modifier = Modifier.alpha(
-                when (snappedIndex) {
-                    index + 1 -> 0.2f
-                    index -> 1f
-                    index - 1 -> 0.2f
-                    else -> 0.2f
-                },
+    private fun getChapterSwipeActionsGroup(
+        libraryPreferences: LibraryPreferences,
+    ): Preference.PreferenceGroup {
+        return Preference.PreferenceGroup(
+            title = stringResource(R.string.pref_chapter_swipe),
+            preferenceItems = listOf(
+                Preference.PreferenceItem.ListPreference(
+                    pref = libraryPreferences.swipeEndAction(),
+                    title = stringResource(R.string.pref_chapter_swipe_end),
+                    entries = mapOf(
+                        LibraryPreferences.ChapterSwipeAction.Disabled to stringResource(R.string.disabled),
+                        LibraryPreferences.ChapterSwipeAction.ToggleBookmark to stringResource(R.string.action_bookmark),
+                        LibraryPreferences.ChapterSwipeAction.ToggleRead to stringResource(R.string.action_mark_as_read),
+                        LibraryPreferences.ChapterSwipeAction.Download to stringResource(R.string.action_download),
+                    ),
+                ),
+                Preference.PreferenceItem.ListPreference(
+                    pref = libraryPreferences.swipeStartAction(),
+                    title = stringResource(R.string.pref_chapter_swipe_start),
+                    entries = mapOf(
+                        LibraryPreferences.ChapterSwipeAction.Disabled to stringResource(R.string.disabled),
+                        LibraryPreferences.ChapterSwipeAction.ToggleBookmark to stringResource(R.string.action_bookmark),
+                        LibraryPreferences.ChapterSwipeAction.ToggleRead to stringResource(R.string.action_mark_as_read),
+                        LibraryPreferences.ChapterSwipeAction.Download to stringResource(R.string.action_download),
+                    ),
+                ),
             ),
-            text = getColumnValue(index),
-            style = MaterialTheme.typography.titleMedium,
-            maxLines = 1,
         )
-    }
-
-    @Composable
-    @ReadOnlyComposable
-    private fun getColumnValue(value: Int): String {
-        return if (value == 0) {
-            stringResource(R.string.label_default)
-        } else {
-            value.toString()
-        }
     }
 
     // SY -->

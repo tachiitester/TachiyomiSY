@@ -2,7 +2,7 @@
 <resources>
     <string name="name">নাম</string>
     <string name="categories">বিভাগসমূহ</string>
-    <string name="manga">মাঙ্গা</string>
+    <string name="manga">পুস্তক সংগ্রহ</string>
     <string name="chapters">অধ্যায়সমূহ</string>
     <string name="track">ট্র্যাকিং</string>
     <string name="history">ইতিহাস</string>
@@ -38,7 +38,6 @@
     <string name="action_rename_category">বিভাগের নতুন নামকরণ করুন</string>
     <string name="action_move_category">বিভাগ নির্বাচন করুন</string>
     <string name="action_edit_cover">মোড়ক সম্পাদনা করুন</string>
-    <string name="action_stop">থামুন</string>
     <string name="action_pause">বিরতি দিন</string>
     <string name="action_previous_chapter">পূর্ববর্তী অধ্যায়</string>
     <string name="action_next_chapter">পরবর্তী আধ্যায়</string>
@@ -190,10 +189,6 @@
     <string name="sort_by_source">উৎস অনুযায়ী</string>
     <string name="sort_by_number">অধ্যায়ের নাম্বার অনুযায়ী</string>
     <string name="manga_download">ডাউনলোড</string>
-    <string name="download_1">পরবর্তী অধ্যায়</string>
-    <string name="download_5">পরবর্তী ৫ অধ্যায়</string>
-    <string name="download_10">পরবর্তী ১০ অধ্যায়</string>
-    <string name="download_all">সব</string>
     <string name="download_unread">অপঠিত</string>
     <string name="confirm_delete_chapters">আপনি কি নিশ্চিত যে আপনি নির্বাচিত অধ্যায়গুলো মুছে ফেলতে চান?</string>
     <string name="manga_tracking_tab">অনুসরিত</string>
@@ -269,8 +264,6 @@
     <string name="manga_removed_library">সংগ্রহশালা থেকে অপসারণ করা হয়েছে</string>
     <string name="copied_to_clipboard">ক্লিপবোর্ডে কপি হয়েছে:
 \n%1$s</string>
-    <string name="custom_download">স্বনির্ধারিত পরিমাণ ডাউনলোড করুন</string>
-    <string name="download_custom">স্বনির্ধারিত</string>
     <string name="migration_dialog_what_to_include">যোগ করার জন্য উপাত্ত নির্বাচন করুন</string>
     <string name="migrate">স্থানান্তর</string>
     <string name="copy">অনুলিপি</string>
@@ -345,7 +338,6 @@
     <string name="action_pin">আটকান</string>
     <string name="action_disable">অক্ষম</string>
     <string name="action_display_show_tabs">বিভাগের ট্যাবগুলি দেখুন</string>
-    <string name="action_display_unread_badge">অপঠিত অধ্যায়</string>
     <string name="action_display_comfortable_grid">আরামপ্রদ গ্রিড</string>
     <string name="action_migrate">স্থানান্তর করুন</string>
     <string name="action_start">শুরু করুন</string>
@@ -373,7 +365,6 @@
     <string name="invalid_backup_file_missing_manga">ব্যাকআপে কোনো মাংগা নেই।</string>
     <string name="invalid_backup_file">ব্যাকআপ ফাইল গ্রহণযোগ্য নয়</string>
     <string name="pref_search_pinned_sources_only">শুধু আটকানো উৎস যোগ করুন</string>
-    <string name="pref_enable_automatic_extension_updates">এক্সটেনশনের হালনাগাদ সমূহ</string>
     <string name="pref_remove_bookmarked_chapters">বুকমার্ক করা অধ্যায়গুলি মুছে ফেলার অনুমতি দিন</string>
     <string name="pref_category_delete_chapters">অধ্যায় মুছুন</string>
     <string name="webtoon_side_padding_25">২৫%</string>
@@ -480,7 +471,6 @@
     <string name="last_used_source">সর্বশেষ ব্যবহৃত</string>
     <string name="http_error_hint">ওয়েবসাইটটি ওয়েবভিউতে পরীক্ষা করুন</string>
     <string name="tabs_header">ট্যাব গুলি</string>
-    <string name="badges_header">প্রতীক গুলি</string>
     <string name="downloaded_chapters">ডাউনলোড করা অধ্যায়</string>
     <string name="manga_from_library">লাইব্রেরীর মাঙ্গা</string>
     <string name="logout_success">আপনি এখন প্রস্থান করেছেন</string>
@@ -514,13 +504,11 @@
     <string name="action_display_show_number_of_items">আইটেমের সংখ্যা প্রদর্শন করুন</string>
     <string name="spen_next_page">পরের পৃষ্ঠা</string>
     <string name="spen_previous_page">আগের পৃষ্ঠা</string>
-    <string name="channel_crash_logs">ক্র্যাশ লগগুলো</string>
     <string name="file_picker_error">কোনো ফাইল বাছাইকারী অ্যাপ পাওয়া যায় নি</string>
     <string name="migration_help_guide">উৎস স্থানান্তর গাইড</string>
     <string name="myanimelist_relogin">দয়া করে MAL এ আবার লগইন করুন</string>
     <string name="track_finished_reading_date">শেষ করার তারিখ</string>
     <string name="track_started_reading_date">শুরু করার তারিখ</string>
-    <string name="crash_log_saved">ক্র্যাশ লগগুলো সংরক্ষিত হয়েছে</string>
     <string name="pref_dump_crash_logs_summary">বিকাশকারীদের সাথে সেয়ার করার জন্য এরর লগগুলো একটি ফাইলে সংরক্ষণ করে</string>
     <string name="right_and_left_nav">ডান ও বাম</string>
     <string name="edge_nav">কিনার</string>
@@ -614,7 +602,7 @@
     <string name="action_start_downloading_now">এখনই ডাউনলোড শুরু করুন</string>
     <string name="action_show_errors">সকল ত্রুটি দেখুন</string>
     <string name="cancel_all_for_series">এই সিরিজের সব বাতিল করুন</string>
-    <string name="action_display_local_badge">স্থানীয় মাঙ্গা</string>
+    <string name="action_display_local_badge">স্থানীয় উৎস</string>
     <string name="information_empty_category_dialog">আপনার এখনও কোন বিভাগ নেই |</string>
     <string name="update_check_eol">এই অ্যান্ড্রয়েড সংস্করণটি আর সমর্থিত নয়</string>
     <string name="confirm_lock_change">পরিবর্তন নিশ্চিত করতে প্রমাণীকরণ করুন</string>
@@ -635,7 +623,7 @@
     <string name="help_translate">অনুবাদে সাহায্য করুন</string>
     <string name="ext_installer_shizuku_unavailable_dialog">এক্সটেনশন ইনস্টলার হিসাবে Shizuku ব্যবহার করতে Shizuku ইনস্টল করুন এবং শুরু করুন।</string>
     <string name="pref_tablet_ui_mode">তাব্লেত উই</string>
-    <string name="action_sort_count">মোট মাঙ্গা</string>
+    <string name="action_sort_count">মোট লেখা</string>
     <string name="label_warning">সতর্কতা</string>
     <string name="action_display_language_badge">ভাষা</string>
     <string name="update_72hour">প্রতি ৩ দিন</string>
@@ -664,7 +652,7 @@
     </plurals>
     <string name="action_sort_unread_count">অপঠিত সংখ্যা</string>
     <string name="action_remove_everything">সবকিছু মুছুন</string>
-    <string name="action_show_manga">মাঙ্গা দেখান</string>
+    <string name="action_show_manga">লেখা দেখান</string>
     <string name="delete_category">বিভাগ মুছুন</string>
     <string name="theme_lavender">ল্যাভেণ্ডার</string>
     <string name="action_search_hint">খুঁজুন…</string>
@@ -677,11 +665,9 @@
     <string name="auto_download_while_reading">পড়ার সময় সয়ংক্রিয়ভাবে ডাউনলোড</string>
     <string name="pref_update_only_completely_read">অপঠিত অধ্যায়সহ</string>
     <string name="pref_library_update_manga_restriction">শিরোনামসমুহ হালনাগাদ এড়িয়ে যান</string>
-    <string name="download_notifier_split_failed">ডাউনলোড করা চিত্র বিভক্ত করা যায়নি</string>
     <string name="channel_skipped">এড়িয়ে যাওয়া</string>
     <string name="pref_update_only_started">যেগুলো শুরু করা হয়নি</string>
     <string name="webview_data_deleted">ওয়েবভিউ ডাটা মুছা হয়েছে</string>
-    <string name="split_tall_images">লম্বা চিত্র বিভক্ত</string>
     <string name="split_tall_images_summary">পঠন কর্মক্ষমতা উন্নত করে</string>
     <string name="pref_clear_webview_data">ওয়েবভিইউ ডাটা মুছুন</string>
     <string name="multi_lang">বহু</string>
@@ -695,4 +681,20 @@
     <string name="pref_security_summary">অ্যাপ লক,নিরাপদ পর্দা</string>
     <string name="loader_rar5_error">RARv5 ধরন সমর্থিত নয়</string>
     <string name="skipped_reason_not_caught_up">অপঠিত অধ্যায় থাকায় এড়িয়ে যাওয়া হয়েছে</string>
+    <string name="label_local">স্থানীয়</string>
+    <string name="action_copy_to_clipboard">ক্লিপবোর্ডে কপি করুন</string>
+    <string name="pref_reset_viewer_flags_success">সমস্ত পাঠক সেটিংস আবার</string>
+    <string name="label_stats">পরিসংখ্যান</string>
+    <string name="label_downloaded">ডাউনলোড হয়েছে</string>
+    <string name="label_started">শুরু হয়েছে</string>
+    <string name="appwidget_unavailable_locked">অ্যাপ লক চালু থাকলে Widget পাওয়া যায় না</string>
+    <string name="action_update_category">বিভাগ আপডেট করুন</string>
+    <string name="action_open_random_manga">এলোমেলো এন্ট্রি খুলুন</string>
+    <string name="action_display_show_continue_reading_button">পড়া চালিয়ে যান বোতাম</string>
+    <string name="download_notifier_cache_renewal">ডাউনলোড চেক করা হচ্ছে</string>
+    <string name="download_notifier_split_page_path_not_found">পৃষ্ঠার ফাইল পাথ খুঁজে পাওয়া যায়নি %d</string>
+    <string name="pref_invalidate_download_cache">অবৈধ ডাউনলোড সমুহ</string>
+    <string name="action_not_now">এখন না</string>
+    <string name="pref_debug_info">ডিবাগ তথ্য</string>
+    <string name="skipped_reason_not_always_update">বাদ দেওয়া হয়েছে কারণ সিরিজের আপডেটের প্রয়োজন নেই৷</string>
 </resources>

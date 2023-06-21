@@ -4,14 +4,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import cafe.adriel.voyager.core.model.rememberScreenModel
-import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import eu.kanade.presentation.browse.MigrateSearchScreen
+import eu.kanade.presentation.util.Screen
 import eu.kanade.tachiyomi.ui.browse.migration.advanced.process.MigrationListScreen
 import eu.kanade.tachiyomi.ui.manga.MangaScreen
 
-class MigrateSearchScreen(private val mangaId: Long, private val validSources: List<Long>) : Screen {
+class MigrateSearchScreen(private val mangaId: Long, private val validSources: List<Long>) : Screen() {
 
     @Composable
     override fun Content() {
@@ -22,9 +22,7 @@ class MigrateSearchScreen(private val mangaId: Long, private val validSources: L
         MigrateSearchScreen(
             navigateUp = navigator::pop,
             state = state,
-            getManga = { source, manga ->
-                screenModel.getManga(source = source, initialManga = manga)
-            },
+            getManga = { screenModel.getManga(it) },
             onChangeSearchQuery = screenModel::updateSearchQuery,
             onSearch = screenModel::search,
             onClickSource = {

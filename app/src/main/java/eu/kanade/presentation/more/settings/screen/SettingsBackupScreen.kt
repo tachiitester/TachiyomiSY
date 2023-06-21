@@ -10,11 +10,14 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.StringRes
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
@@ -36,24 +39,25 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import com.hippo.unifile.UniFile
-import eu.kanade.domain.backup.service.BackupPreferences
-import eu.kanade.presentation.components.Divider
-import eu.kanade.presentation.components.ScrollbarLazyColumn
+import eu.kanade.presentation.extensions.RequestStoragePermission
 import eu.kanade.presentation.more.settings.Preference
 import eu.kanade.presentation.util.collectAsState
-import eu.kanade.presentation.util.isScrolledToEnd
-import eu.kanade.presentation.util.isScrolledToStart
 import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.data.backup.BackupConst
-import eu.kanade.tachiyomi.data.backup.BackupCreatorJob
+import eu.kanade.tachiyomi.data.backup.BackupCreateJob
 import eu.kanade.tachiyomi.data.backup.BackupFileValidator
-import eu.kanade.tachiyomi.data.backup.BackupRestoreService
+import eu.kanade.tachiyomi.data.backup.BackupRestoreJob
 import eu.kanade.tachiyomi.data.backup.models.Backup
 import eu.kanade.tachiyomi.util.storage.DiskUtil
 import eu.kanade.tachiyomi.util.system.DeviceUtil
 import eu.kanade.tachiyomi.util.system.copyToClipboard
 import eu.kanade.tachiyomi.util.system.toast
 import kotlinx.coroutines.launch
+import tachiyomi.domain.backup.service.BackupPreferences
+import tachiyomi.presentation.core.components.ScrollbarLazyColumn
+import tachiyomi.presentation.core.components.material.Divider
+import tachiyomi.presentation.core.util.isScrolledToEnd
+import tachiyomi.presentation.core.util.isScrolledToStart
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 
@@ -92,7 +96,7 @@ object SettingsBackupScreen : SearchableSettings {
                     Intent.FLAG_GRANT_READ_URI_PERMISSION or
                         Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
                 )
-                BackupCreatorJob.startNow(context, it, flag)
+                BackupCreateJob.startNow(context, it, flag)
             }
             flag = 0
         }
@@ -118,7 +122,7 @@ object SettingsBackupScreen : SearchableSettings {
             subtitle = stringResource(R.string.pref_create_backup_summ),
             onClick = {
                 scope.launch {
-                    if (!BackupCreatorJob.isManualJobRunning(context)) {
+                    if (!BackupCreateJob.isManualJobRunning(context)) {
                         if (DeviceUtil.isMiui && DeviceUtil.isMiuiOptimizationDisabled()) {
                             context.toast(R.string.restore_miui_warning, Toast.LENGTH_LONG)
                         }
@@ -258,23 +262,35 @@ object SettingsBackupScreen : SearchableSettings {
                         onDismissRequest = onDismissRequest,
                         title = { Text(text = stringResource(R.string.pref_restore_backup)) },
                         text = {
-                            val msg = buildString {
-                                append(stringResource(R.string.backup_restore_content_full))
-                                if (err.sources.isNotEmpty()) {
-                                    append("\n\n").append(stringResource(R.string.backup_restore_missing_sources))
-                                    err.sources.joinTo(this, separator = "\n- ", prefix = "\n- ")
+                            Column(
+                                modifier = Modifier.verticalScroll(rememberScrollState()),
+                            ) {
+                                val msg = buildString {
+                                    append(stringResource(R.string.backup_restore_content_full))
+                                    if (err.sources.isNotEmpty()) {
+                                        append("\n\n").append(stringResource(R.string.backup_restore_missing_sources))
+                                        err.sources.joinTo(
+                                            this,
+                                            separator = "\n- ",
+                                            prefix = "\n- ",
+                                        )
+                                    }
+                                    if (err.trackers.isNotEmpty()) {
+                                        append("\n\n").append(stringResource(R.string.backup_restore_missing_trackers))
+                                        err.trackers.joinTo(
+                                            this,
+                                            separator = "\n- ",
+                                            prefix = "\n- ",
+                                        )
+                                    }
                                 }
-                                if (err.trackers.isNotEmpty()) {
-                                    append("\n\n").append(stringResource(R.string.backup_restore_missing_trackers))
-                                    err.trackers.joinTo(this, separator = "\n- ", prefix = "\n- ")
-                                }
+                                Text(text = msg)
                             }
-                            Text(text = msg)
                         },
                         confirmButton = {
                             TextButton(
                                 onClick = {
-                                    BackupRestoreService.start(context, err.uri)
+                                    BackupRestoreJob.start(context, err.uri)
                                     onDismissRequest()
                                 },
                             ) {
@@ -304,7 +320,7 @@ object SettingsBackupScreen : SearchableSettings {
                 }
 
                 if (results.missingSources.isEmpty() && results.missingTrackers.isEmpty()) {
-                    BackupRestoreService.start(context, it)
+                    BackupRestoreJob.start(context, it)
                     return@rememberLauncherForActivityResult
                 }
 
@@ -316,7 +332,7 @@ object SettingsBackupScreen : SearchableSettings {
             title = stringResource(R.string.pref_restore_backup),
             subtitle = stringResource(R.string.pref_restore_backup_summ),
             onClick = {
-                if (!BackupRestoreService.isRunning(context)) {
+                if (!BackupRestoreJob.isRunning(context)) {
                     if (DeviceUtil.isMiui && DeviceUtil.isMiuiOptimizationDisabled()) {
                         context.toast(R.string.restore_miui_warning, Toast.LENGTH_LONG)
                     }
@@ -330,7 +346,7 @@ object SettingsBackupScreen : SearchableSettings {
     }
 
     @Composable
-    fun getAutomaticBackupGroup(
+    private fun getAutomaticBackupGroup(
         backupPreferences: BackupPreferences,
     ): Preference.PreferenceGroup {
         val context = LocalContext.current
@@ -367,7 +383,7 @@ object SettingsBackupScreen : SearchableSettings {
                         168 to stringResource(R.string.update_weekly),
                     ),
                     onValueChanged = {
-                        BackupCreatorJob.setupTask(context, it)
+                        BackupCreateJob.setupTask(context, it)
                         true
                     },
                 ),
@@ -405,7 +421,7 @@ private data class MissingRestoreComponents(
     val trackers: List<String>,
 )
 
-data class InvalidRestore(
+private data class InvalidRestore(
     val uri: Uri,
     val message: String,
 )

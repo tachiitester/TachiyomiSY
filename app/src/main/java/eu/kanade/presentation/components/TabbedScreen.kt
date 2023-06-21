@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -21,6 +22,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import kotlinx.coroutines.launch
+import tachiyomi.presentation.core.components.HorizontalPager
+import tachiyomi.presentation.core.components.material.Scaffold
+import tachiyomi.presentation.core.components.material.TabIndicator
+import tachiyomi.presentation.core.components.material.TabText
 
 @Composable
 fun TabbedScreen(
@@ -64,7 +69,7 @@ fun TabbedScreen(
         ) {
             TabRow(
                 selectedTabIndex = state.currentPage,
-                indicator = { TabIndicator(it[state.currentPage]) },
+                indicator = { TabIndicator(it[state.currentPage], state.currentPageOffsetFraction) },
             ) {
                 tabs.forEachIndexed { index, tab ->
                     Tab(
@@ -77,7 +82,7 @@ fun TabbedScreen(
             }
 
             HorizontalPager(
-                count = tabs.size,
+                pageCount = tabs.size,
                 modifier = Modifier.fillMaxSize(),
                 state = state,
                 verticalAlignment = Alignment.Top,

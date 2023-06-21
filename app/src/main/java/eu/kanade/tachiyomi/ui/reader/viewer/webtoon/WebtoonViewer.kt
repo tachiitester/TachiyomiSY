@@ -6,6 +6,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
+import android.view.animation.LinearInterpolator
 import androidx.core.app.ActivityCompat
 import androidx.core.view.isGone
 import androidx.core.view.isVisible
@@ -18,22 +19,22 @@ import eu.kanade.tachiyomi.ui.reader.model.ReaderPage
 import eu.kanade.tachiyomi.ui.reader.model.StencilPage
 import eu.kanade.tachiyomi.ui.reader.model.ViewerChapters
 import eu.kanade.tachiyomi.ui.reader.setting.ReaderPreferences
-import eu.kanade.tachiyomi.ui.reader.viewer.BaseViewer
+import eu.kanade.tachiyomi.ui.reader.viewer.Viewer
 import eu.kanade.tachiyomi.ui.reader.viewer.ViewerNavigation.NavigationRegion
-import eu.kanade.tachiyomi.util.system.logcat
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.cancel
-import rx.subscriptions.CompositeSubscription
+import tachiyomi.core.util.system.logcat
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import uy.kohesive.injekt.injectLazy
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.time.Duration
 
 /**
- * Implementation of a [BaseViewer] to display pages with a [RecyclerView].
+ * Implementation of a [Viewer] to display pages with a [RecyclerView].
  */
-class WebtoonViewer(val activity: ReaderActivity, val isContinuous: Boolean = true, private val tapByPage: Boolean = false) : BaseViewer {
+class WebtoonViewer(val activity: ReaderActivity, val isContinuous: Boolean = true, private val tapByPage: Boolean = false) : Viewer {
 
     val downloadManager: DownloadManager by injectLazy()
 
@@ -74,11 +75,6 @@ class WebtoonViewer(val activity: ReaderActivity, val isContinuous: Boolean = tr
      */
     /* [EXH] private */
     var currentPage: Any? = null
-
-    /**
-     * Subscriptions to keep while this viewer is used.
-     */
-    val subscriptions = CompositeSubscription()
 
     private val threshold: Int =
         Injekt.get<ReaderPreferences>()
@@ -149,6 +145,10 @@ class WebtoonViewer(val activity: ReaderActivity, val isContinuous: Boolean = tr
             ActivityCompat.recreate(activity)
         }
 
+        config.doubleTapZoomChangedListener = {
+            frame.doubleTapZoom = it
+        }
+
         config.navigationModeChangedListener = {
             val showOnStart = config.navigationOverlayOnStart || config.forceNavigationOverlay
             activity.binding.navigationOverlay.setNavigation(config.navigator, showOnStart)
@@ -203,7 +203,6 @@ class WebtoonViewer(val activity: ReaderActivity, val isContinuous: Boolean = tr
     override fun destroy() {
         super.destroy()
         scope.cancel()
-        subscriptions.unsubscribe()
     }
 
     /**
@@ -298,6 +297,13 @@ class WebtoonViewer(val activity: ReaderActivity, val isContinuous: Boolean = tr
         } else {
             recycler.scrollBy(0, -scrollDistance)
         }
+    }
+
+    /**
+     * Scrolls one screen over a period of time
+     */
+    fun linearScroll(duration: Duration) {
+        recycler.smoothScrollBy(0, activity.resources.displayMetrics.heightPixels, LinearInterpolator(), duration.inWholeMilliseconds.toInt())
     }
 
     /**

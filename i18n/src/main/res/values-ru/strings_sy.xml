@@ -24,6 +24,9 @@
     <string name="pref_ehentai_summary">Вход в E/ExHentai, синхронизация галерей</string>
     <string name="pref_mangadex_summary">Вход в MangaDex, синхронизация отслеживаемого</string>
 
+    <!-- About -->
+    <string name="changelog_version">Версия %1$s</string>
+
     <!-- EH Settings -->
     <string name="ehentai_prefs_account_settings">Настройки учетной записи (E-Hentai)</string>
     <string name="enable_exhentai">Включить ExHentai</string>
@@ -70,6 +73,7 @@
     <string name="force_sync_state_reset_summary">Выполнять полную ресинхронизацию при следующей синхронизации. Удалённый материал не будет синхронизирован. Всё избранное в приложении будет перезагружено на ExHentai, а всё избранное на ExHentai будет перезагружено в приложение. Полезно для восстановления синхронизации после того, как она была прервана.</string>
     <string name="sync_state_reset">Сброс состояния синхронизации</string>
     <string name="gallery_update_checker">Проверка обновлений для галерей</string>
+    <string name="auto_update_restrictions">Ограничения автоматического обновления</string>
     <string name="time_between_batches">Время между обновлениями</string>
     <string name="time_between_batches_never">Никогда не обновлять</string>
     <string name="time_between_batches_1_hour">1 час</string>
@@ -143,7 +147,8 @@
     <string name="data_saver_image_format_summary_on">Размер файла JPEG значительно меньше, чем WebP(Это означает, что сохраняется больше данных), но из-за этого изображения также теряют больше качества.\nВ текущий момент сжимается в JPEG</string>
     <string name="data_saver_image_format_summary_off">Размер файла JPEG значительно меньше, чем WebP(Это означает, что сохраняется больше данных), но из-за этого изображения также теряют больше качества.\nВ текущий момент сжимается в WebP</string>
     <string name="data_saver_color_bw">Преобразование в чернобелое</string>
-    <string name="data_saver_server">Прокси-сервер Bandwidth Hero</string>
+    <string name="bandwidth_hero">Bandwidth Hero (Требуется прокси-сервер Bandwidth Hero)</string>
+    <string name="bandwidth_data_saver_server">Прокси-сервер Bandwidth Hero</string>
     <string name="data_saver_server_summary">Поместите в эту область URL-адрес прокси-сервера Bandwidth Hero</string>
     <string name="clear_db_exclude_read">Оставлять серии с прочитанными главами</string>
 
@@ -212,6 +217,27 @@
     <string name="thursday">Четверг</string>
     <string name="friday">Пятница</string>
     <string name="saturday">Суббота</string>
+    <string name="encrypt_database">Зашифровать базу данных</string>
+    <string name="encrypt_database_subtitle">Требуется перезагрузка приложения для применения изменений</string>
+    <string name="encrypt_database_message">
+        <![CDATA[<font color=\'red\'>ВКЛЮЧЕНИЯ ЭТОГО ПАРАМЕТРА СОЗДАСТ НОВУЮ БАЗУ ДАННЫХ. СЛЕДУЙТЕ СЛЕДУЮЩИМ ДЕЙСТВИЯМ ДЛЯ СОХРАНЕНИЯ ВАШИХ ДАННЫХ<br>1. НАСТРОЙКИ ПРИЛОЖЕНИЯ → РЕЗЕРВНАЯ КОПИЯ → СОЗДАТЬ РЕЗЕРВНУЮ КОПИЮ<br>2. СИСТЕМНЫЕ НАСТРОЙКИ ПРИЛОЖЕНИЯ → ОЧИСТИТЬ ДАННЫЕ ПРИЛОЖЕНИЯ<br>3. ЗАНОВО ОТКРОЙТЕ ПРИЛОЖЕНИЕ И АКТИВИРУЙТЕ ЭТОТ ПАРАМЕТР<br>4. СИСТЕМНЫЕ НАСТРОЙКИ ПРИЛОЖЕНИЯ → ПРИНУДИТЕЛЬНО ПЕРЕЗАПУСТИТЕ ПРИЛОЖЕНИЕ<br>5. НАСТРОЙКИ ПРИЛОЖЕНИЯ → РЕЗЕРВНАЯ КОПИЯ → ВОССТАНОВИТЬ ИЗ РЕЗЕРВНОЙ КОПИИ</font>]]>
+    </string>
+    <string name="set_cbz_zip_password">Установить пароль для архива CBZ</string>
+    <string name="password_protect_downloads">Пароль защищает загрузки</string>
+    <string name="password_protect_downloads_summary">Шифрует загрузки в архиве CBZ при помощи заданного пароля.\nВНИМАНИЕ: ДАННЫЕ ВНУТРИ АРХИВОВ БУДУТ НАВСЕГДА УТЕРЯНЫ, ЕСЛИ ВЫ ЗАБУДЕТЕ ПАРОЛЬ</string>
+    <string name="delete_cbz_archive_password">Удалить пароль архива CBZ</string>
+    <string name="save_in_manga_directory">В папке серии</string>
+    <string name="save_internally">Внутри приложения</string>
+    <string name="save_never">Никогда (источник пользователя не будет иметь обложек)</string>
+    <string name="save_local_manga_covers">Сохранять обложки серий пользователя</string>
+    <string name="delete_cached_local_source_covers">Удалить кэшированные обложки из источника пользователя</string>
+    <string name="delete_cached_local_source_covers_subtitle">Источник пользователя внутри приложения НЕ удаляет автоматически обложки серий\nПожалуйста, производите удаление здесь, затем откройте источник пользователя, чтобы сгенерировать их снова</string>
+    <string name="successfully_deleted_all_locally_cached_covers">Все кэшированные обложки были успешно удалены</string>
+    <string name="something_went_wrong_deleting_your_cover_images">Что-то пошло не так при удалении ваших обложек:</string>
+    <string name="cbz_archive_password">Пароль архива CBZ</string>
+    <string name="wrong_cbz_archive_password">Неверный пароль архива CBZ</string>
+    <string name="encryption_type">Тип шифрования</string>
+    <string name="standard_zip_encryption">Обычное ZIP шифрование (быстрое, но небезопасное)</string>
 
     <!-- Reader Settings -->
     <string name="page_downloading">Загрузка страниц</string>
@@ -247,6 +273,7 @@
     <string name="pref_left_handed_vertical_seekbar_summary">Переключает положение полосы прокрутки</string>
     <string name="pref_force_horz_seekbar">Принудительная горизонтальная полоса прокрутки</string>
     <string name="pref_force_horz_seekbar_summary">Полностью убирает вертикальную полосу прокрутки в пользу горизонтальной</string>
+    <string name="pref_smooth_scroll">Плавная автопрокрутка</string>
 
     <!-- Reader -->
     <!-- Reader Actions -->
@@ -421,6 +448,7 @@
     <string name="no_chapters_found_for_migration">Глав не найдено. Эта серия не может быть использована для переноса</string>
     <string name="no_alternatives_found">Альтернатив не найдено</string>
     <string name="stop_migrating">Остановить перенос?</string>
+    <string name="action_stop">Остановить</string>
     <plurals name="migrate_entry">
         <item quantity="one">Перенести %1$d%2$s серию?</item>
         <item quantity="few">Перенести %1$d%2$s серии?</item>
@@ -638,9 +666,7 @@
     <string name="download_merged_entry_desc">Переключение этого параметра отключит/включит загрузку глав для этой объеденённой серии</string>
     <string name="merged_references_invalid">Недействительные объеденённые ссылки</string>
     <string name="merged_chapter_updates_error">Ошибка переключения обновлений глав</string>
-    <string name="merged_toggle_chapter_updates_find_error">Не удалось найти серию для переключения обновлений глав</string>
     <string name="merged_toggle_download_chapters_error">Ошибка переключения загрузки глав</string>
-    <string name="merged_toggle_download_chapters_find_error">Не удалось найти серию для переключения загрузки глав</string>
     <string name="allow_deduplication">Разрешить дедупликацию:</string>
     <string name="deduplication_mode">Режим дедупликации:</string>
     <string name="deduplication_entry_info">Сведенья серии:</string>
@@ -669,7 +695,7 @@
     <!-- Similar -->
     <string name="similar">Похожее на %1$s</string>
 
-    <!-- Mangadex relations-->
+    <!-- MangaDex relations-->
     <string name="relation_similar">Похожее</string>
     <string name="relation_monochrome">Монохром</string>
     <string name="relation_main_story">Главная история</string>

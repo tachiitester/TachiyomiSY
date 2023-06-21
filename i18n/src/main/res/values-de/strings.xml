@@ -35,7 +35,6 @@
     <string name="action_rename_category">Kategorie umbenennen</string>
     <string name="action_move_category">Kategorien festlegen</string>
     <string name="action_edit_cover">Cover bearbeiten</string>
-    <string name="action_stop">Stopp</string>
     <string name="action_pause">Pause</string>
     <string name="action_previous_chapter">Vorheriges Kapitel</string>
     <string name="action_next_chapter">Nächstes Kapitel</string>
@@ -64,7 +63,7 @@
     <string name="pref_category_tracking">Tracking</string>
     <string name="pref_category_advanced">Erweitert</string>
     <string name="pref_category_about">Über</string>
-    <string name="pref_library_columns">Elemente pro Zeile</string>
+    <string name="pref_library_columns">Kachelgröße</string>
     <string name="portrait">Hochformat</string>
     <string name="landscape">Querformat</string>
     <string name="pref_library_update_interval">Automatische Aktualisierungen</string>
@@ -95,10 +94,10 @@
     <string name="white_background">Weiß</string>
     <string name="black_background">Schwarz</string>
     <string name="pref_viewer_type">Standard-Lesemodus</string>
-    <string name="left_to_right_viewer">Links nach rechts</string>
-    <string name="right_to_left_viewer">Rechts nach links</string>
-    <string name="vertical_viewer">Vertikal</string>
-    <string name="webtoon_viewer">Webtoon</string>
+    <string name="left_to_right_viewer">Seiten (links nach rechts)</string>
+    <string name="right_to_left_viewer">Seiten (rechts nach links)</string>
+    <string name="vertical_viewer">Seiten (vertikal)</string>
+    <string name="webtoon_viewer">Langer Streifen</string>
     <string name="pref_image_scale_type">Skalierung</string>
     <string name="scale_type_fit_screen">Bild ausfüllen</string>
     <string name="scale_type_stretch">Strecken</string>
@@ -182,10 +181,6 @@
     <string name="sort_by_source">Quelle</string>
     <string name="sort_by_number">Kapitelnummer</string>
     <string name="manga_download">Herunterladen</string>
-    <string name="download_1">Nächstes Kapitel</string>
-    <string name="download_5">Nächste 5 Kapitel</string>
-    <string name="download_10">Nächste 10 Kapitel</string>
-    <string name="download_all">Alle</string>
     <string name="download_unread">Ungelesen</string>
     <string name="confirm_delete_chapters">Bist du sicher, dass du die ausgewählten Kapitel löschen willst\?</string>
     <string name="manga_tracking_tab">Tracking</string>
@@ -271,11 +266,9 @@
     <string name="ext_untrusted">Nicht vertrauenswürdig</string>
     <string name="untrusted_extension">Nicht vertrauenswürdige Erweiterung</string>
     <string name="pref_double_tap_anim_speed">Animationsgeschwindigkeit beim Doppeltippen</string>
-    <string name="custom_download">Benutzerdefinierte Anzahl herunterladen</string>
     <string name="migration_dialog_what_to_include">Wähle zu beinhaltende Daten</string>
     <string name="pager_viewer">Seiten</string>
     <string name="source_not_installed">Quelle nicht installiert: %1$s</string>
-    <string name="download_custom">Benutzerdefiniert</string>
     <string name="repeating">Am Wiederlesen</string>
     <string name="track_status">Status</string>
     <string name="track_type">Typ</string>
@@ -289,9 +282,9 @@
     <string name="transition_pages_error">Seiten konnten nicht geladen werden: %1$s</string>
     <string name="action_open_in_web_view">In WebView öffnen</string>
     <string name="pref_true_color">32-Bit-Farben</string>
-    <string name="pref_skip_read_chapters">Überspringe gelesene Kapitel</string>
+    <string name="pref_skip_read_chapters">Gelesene Kapitel überspringen</string>
     <string name="pref_read_with_long_tap">Bei langem Antippen anzeigen</string>
-    <string name="filter_mode_overlay">Überlagerung</string>
+    <string name="filter_mode_overlay">Overlay</string>
     <string name="filter_mode_multiply">Multiplizieren</string>
     <string name="filter_mode_screen">Bildschirm</string>
     <string name="filter_mode_darken">Brennen / Verdunkeln</string>
@@ -321,7 +314,7 @@
     <string name="theme_dark">An</string>
     <string name="theme_system">Systemeinstellung</string>
     <string name="pref_manage_notifications">Benachrichtigungen verwalten</string>
-    <string name="pref_category_security">Sicherheit</string>
+    <string name="pref_category_security">Sicherheit und Privatsphäre</string>
     <string name="lock_with_biometrics">Entsperren erforderlich</string>
     <string name="lock_when_idle">Während Inaktivität sperren</string>
     <string name="lock_always">Immer</string>
@@ -367,7 +360,6 @@
     <string name="action_oldest">Älteste</string>
     <string name="action_move_to_top">Nach oben verschieben</string>
     <string name="action_move_to_bottom">Nach unten verschieben</string>
-    <string name="pref_enable_automatic_extension_updates">Nach Erweiterungsaktualisierungen suchen</string>
     <plurals name="update_check_notification_ext_updates">
         <item quantity="one">Erweiterungsaktualisierung verfügbar</item>
         <item quantity="other">%d Erweiterungsaktualisierungen verfügbar</item>
@@ -375,15 +367,15 @@
     <string name="channel_ext_updates">Erweiterungsaktualisierungen</string>
     <string name="http_error_hint">Webseite in WebView prüfen</string>
     <string name="updating_library">Bibliothek wird aktualisiert</string>
-    <string name="pref_skip_filtered_chapters">Überspringe gefilterte Kapitel</string>
+    <string name="pref_skip_filtered_chapters">Gefilterte Kapitel überspringen</string>
     <string name="pref_category_reading">Beim Lesen</string>
     <string name="label_sources">Quellen</string>
     <string name="action_select_inverse">Auswahl umkehren</string>
-    <string name="vertical_plus_viewer">Kontinuierlich vertikal</string>
-    <string name="webtoon_side_padding_25">25 %</string>
-    <string name="webtoon_side_padding_20">20 %</string>
-    <string name="webtoon_side_padding_15">15 %</string>
-    <string name="webtoon_side_padding_10">10 %</string>
+    <string name="vertical_plus_viewer">Langer Streifen mit Lücken</string>
+    <string name="webtoon_side_padding_25">25%</string>
+    <string name="webtoon_side_padding_20">20%</string>
+    <string name="webtoon_side_padding_15">15%</string>
+    <string name="webtoon_side_padding_10">10%</string>
     <string name="webtoon_side_padding_0">Keine</string>
     <string name="pref_webtoon_side_padding">Seitenränder</string>
     <string name="pinned_sources">Angeheftet</string>
@@ -415,7 +407,7 @@
         <item quantity="one">%1$s verbleibend</item>
         <item quantity="other">%1$s verbleibend</item>
     </plurals>
-    <string name="pref_search_pinned_sources_only">Nur angeheftete Quellen einbeziehen</string>
+    <string name="pref_search_pinned_sources_only">Nur angeheftete Quellen in der globalen Suche durchsuchen</string>
     <string name="gray_background">Grau</string>
     <string name="viewer">Lesemodus</string>
     <string name="pref_category_for_this_series">Für diese Serie</string>
@@ -429,7 +421,6 @@
         <item quantity="one">Erledigt in %1$s mit %2$s Fehler</item>
         <item quantity="other">Erledigt in %1$s mit %2$s Fehlern</item>
     </plurals>
-    <string name="action_display_unread_badge">Ungelesene Kapitel</string>
     <string name="tracking_info">Einweg-Synchronisation zum Aktualisieren der Kapitelfortschritte in den Trackingdiensten. Richte Tracking für einzelne Einträge über deren jeweiligen Tracking-Button ein.</string>
     <string name="pref_refresh_library_covers">Bibliothekscover aktualisieren</string>
     <string name="unofficial_extension_message">Diese Erweiterung stammt nicht von der offiziellen Tachiyomi-Erweiterungsliste.</string>
@@ -444,7 +435,6 @@
     <string name="action_migrate">Migrieren</string>
     <string name="action_display_comfortable_grid">Komfortable Kacheln</string>
     <string name="tabs_header">Registerkarten</string>
-    <string name="badges_header">Abzeichen</string>
     <string name="action_display_show_tabs">Kategorienreiter anzeigen</string>
     <string name="page_list_empty_error">Keine Seiten gefunden</string>
     <string name="action_disable_all">Alles deaktivieren</string>
@@ -505,7 +495,7 @@
     <string name="pref_incognito_mode_summary">Leseverlauf pausieren</string>
     <string name="pref_incognito_mode">Inkognito-Modus</string>
     <string name="pref_clear_history">Verlauf löschen</string>
-    <string name="clear_history_confirmation">Bist du sicher\? Der gesamte Verlauf wird verloren sein.</string>
+    <string name="clear_history_confirmation">Bist du sicher\? Der gesamte Verlauf wird gelöscht.</string>
     <string name="clear_history_completed">Verlauf gelöscht</string>
     <string name="spen_next_page">Nächste Seite</string>
     <string name="spen_previous_page">Vorherige Seite</string>
@@ -518,12 +508,10 @@
     <string name="pref_viewer_nav">Tippzonen</string>
     <string name="kindlish_nav">Kindle-Stil</string>
     <string name="l_nav">L-förmig</string>
-    <string name="channel_crash_logs">Absturzprotokolle</string>
     <string name="track_finished_reading_date">Enddatum</string>
     <string name="track_started_reading_date">Startdatum</string>
-    <string name="crash_log_saved">Absturzprotokolle gespeichert</string>
     <string name="pref_dump_crash_logs_summary">Speichert Fehlerprotokolle in einer Datei, die dann mit den Entwicklern geteilt wird</string>
-    <string name="pref_dump_crash_logs">Absturzprotokolle ausgeben</string>
+    <string name="pref_dump_crash_logs">Absturzprotokolle teilen</string>
     <string name="action_desc">Absteigend</string>
     <string name="action_asc">Aufsteigend</string>
     <string name="action_order_by_chapter_number">Nach Kapitelnummer</string>
@@ -604,7 +592,7 @@
     <string name="pref_low">Niedrig</string>
     <string name="pref_high">Hoch</string>
     <string name="pref_highest">Höchste</string>
-    <string name="pref_hide_threshold">Empfindlichkeit für das Ausblenden des Menüs beim Scrollen</string>
+    <string name="pref_hide_threshold">Empfindlichkeit für das Menü-Ausblenden beim Scrollen</string>
     <string name="pref_inverted_colors">Invertiert</string>
     <string name="pref_relative_time_short">Kurz (Heute, Gestern)</string>
     <string name="pref_relative_format">Relative Zeitstempel</string>
@@ -656,14 +644,11 @@
     <string name="on_hiatus">Unterbrochen</string>
     <string name="publishing_finished">Veröffentlichung abgeschlossen</string>
     <string name="action_faq_and_guides">Häufige Fragen und Leitfäden</string>
-    <string name="webtoon_side_padding_5">5 %</string>
+    <string name="webtoon_side_padding_5">5%</string>
     <string name="action_show_manga">Eintrag anzeigen</string>
-    <string name="confirm_manga_add_duplicate">In deiner Bibliothek existiert ein Eintrag mit dem gleichen Namen, aber aus einer anderen Quelle (%1$s).
-\n
-\nMöchtest du trotzdem fortfahren\?</string>
     <string name="action_display_cover_only_grid">Nur-Cover-Kacheln</string>
     <string name="pref_landscape_zoom">Bild im Querformat vergrößern</string>
-    <string name="pref_navigate_pan">Beim Tippen innerhalb breiter Seiten navigieren</string>
+    <string name="pref_navigate_pan">Innerhalb breiter Seiten navigieren</string>
     <string name="pref_update_only_started">Die noch nicht begonnen wurden</string>
     <string name="skipped_reason_completed">Übersprungen, da die Serie abgeschlossen ist</string>
     <string name="skipped_reason_not_caught_up">Übersprungen, weil es ungelesene Kapitel gibt</string>
@@ -677,7 +662,7 @@
     <string name="disabled_nav">Deaktiviert</string>
     <string name="error_saving_picture">Fehler beim Speichern des Bildes</string>
     <string name="update_check_fdroid_migration_info">Eine neue Version ist aus dem offiziellen Repository verfügbar. Tippe, um zu erfahren, wie man aus inoffiziellen F-Droid-Versionen migriert.</string>
-    <string name="empty_backup_error">Keine zu sichernden Bibliothekseinträge</string>
+    <string name="empty_backup_error">Keine zu sichernden Bibliothekseinträge verfügbar</string>
     <string name="update_check_open">Auf GitHub öffnen</string>
     <string name="pref_clear_webview_data">WebView-Daten löschen</string>
     <string name="webview_data_deleted">WebView-Daten gelöscht</string>
@@ -687,7 +672,6 @@
     <string name="source_empty_screen">Keine Quelle gefunden</string>
     <string name="action_sort_unread_count">Anzahl an Ungelesenem</string>
     <string name="action_sort_last_manga_update">Letzte Aktualisierungsprüfung</string>
-    <string name="split_tall_images">Hohe Bilder teilen</string>
     <string name="split_tall_images_summary">Verbessert die Leserleistung</string>
     <string name="download_notifier_split_page_not_found">Seite %d während dem Aufteilen nicht gefunden</string>
     <string name="download_notifier_split_page_path_not_found">Dateipfad der Seite %d konnte nicht gefunden werden</string>
@@ -695,7 +679,6 @@
     <string name="pref_reset_viewer_flags">Lesereinstellungen für jede Serie zurücksetzen</string>
     <string name="pref_reset_viewer_flags_success">Alle Lesereinstellungen zurückgesetzt</string>
     <string name="pref_reset_viewer_flags_error">Lesereinstellungen konnten nicht zurückgesetzt werden</string>
-    <string name="download_notifier_split_failed">Heruntergeladenes Bild konnte nicht aufgeteilt werden</string>
     <string name="empty_screen">Tja, das ist jetzt etwas peinlich</string>
     <string name="ext_info_version">Version</string>
     <string name="ext_info_language">Sprache</string>
@@ -744,32 +727,29 @@
     <string name="pref_appearance_summary">Thema, Datums- und Zeitformat</string>
     <string name="pref_reader_summary">Lesemodus, Anzeige, Navigation</string>
     <string name="pref_downloads_summary">Automatische Downloads, im Voraus herunterladen</string>
-    <string name="pref_library_summary">Kategorien, globale Aktualisierungen</string>
+    <string name="pref_library_summary">Kategorien, globale Aktualisierungen, Kapitelaktionen</string>
     <string name="crash_screen_restart_application">Anwendung neustarten</string>
     <string name="pref_tracking_summary">Einweg-Synchronisation, erweiterte Synchronisation</string>
     <string name="pref_browse_summary">Quellen, Erweiterungen, globale Suche</string>
     <string name="crash_screen_title">Ups!</string>
     <string name="pref_advanced_summary">Absturzprotokolle ausgeben, Akkuverbrauch-Optimierung</string>
     <string name="pref_backup_summary">Manuelle und automatische Datensicherungen</string>
-    <string name="crash_screen_description">%s ist auf einen unerwarteten Fehler gestoßen. Wir empfehlen dir, einen Screenshot von dieser Nachricht zu machen, die Absturzprotokolle auszugeben und sie dann in unserem Support-Kanal auf Discord zu teilen.</string>
+    <string name="crash_screen_description">%s ist auf einen unerwarteten Fehler gestoßen. Wir empfehlen dir, die Absturzprotokolle in unserem Support-Kanal auf Discord zu teilen.</string>
     <string name="pref_security_summary">App-Sperre, sicherer Bildschirm</string>
     <string name="unknown_title">Unbekannter Titel</string>
     <string name="invalid_location">Ungültiger Speicherort: %s</string>
     <string name="error_user_agent_string_invalid">Ungültiger User-Agent-Text</string>
     <string name="updates_last_update_info_just_now">Gerade eben</string>
-    <string name="channel_downloader_cache">Indizierung</string>
-    <string name="download_notifier_cache_renewal">Downloads werden indiziert</string>
+    <string name="download_notifier_cache_renewal">Downloads werden überprüft</string>
     <string name="action_open_random_manga">Zufälligen Eintrag öffnen</string>
     <string name="information_no_entries_found">Keine Einträge in dieser Kategorie gefunden</string>
     <string name="fdroid_warning">F-Droid-Builds werden nicht offiziell unterstützt.
 \nTippe, um mehr zu erfahren.</string>
-    <string name="action_display_show_continue_reading_button">Weiterlesen-Button anzeigen</string>
-    <string name="other_header">Andere</string>
+    <string name="action_display_show_continue_reading_button">Weiterlesen-Button</string>
     <string name="pref_invalidate_download_cache">Index der Downloads invalidieren</string>
     <string name="track_remove_date_conf_title">Datum entfernen\?</string>
     <string name="track_remove_start_date_conf_text">Dies wird dein zuvor gewähltes Startdatum von %s entfernen</string>
     <string name="track_remove_finish_date_conf_text">Dies wird dein zuvor gewähltes Enddatum von %s entfernen</string>
-    <string name="enhanced_tracking_warning">Dieser Tracker ist nur mit der %1$s-Quelle kompatibel.</string>
     <string name="pref_invalidate_download_cache_summary">App zwingen, heruntergeladene Kapitel erneut zu überprüfen</string>
     <string name="label_overview_section">Übersicht</string>
     <string name="label_downloaded">Heruntergeladen</string>
@@ -795,6 +775,32 @@
     <string name="information_no_manga_category">Kategorie ist leer</string>
     <string name="pref_library_update_show_tab_badge">Anzahl an Ungelesenem auf dem „Neues“-Symbol anzeigen</string>
     <string name="copied_to_clipboard_plain">In die Zwischenablage kopiert</string>
-    <string name="pref_worker_info">Worker-Infos</string>
-    <string name="ext_miui_warning">Das Installieren von Erweiterungen funktioniert möglicherweise nicht richtig, wenn die MIUI-Optimierung aktiviert ist. Versuche, sie zu deaktivieren oder installiere Erweiterungen stattdessen von der Webseite.</string>
+    <string name="enhanced_services_not_installed">Verfügbar, aber Quelle ist nicht installiert: %s</string>
+    <string name="pref_skip_dupe_chapters">Doppelte Kapitel überspringen</string>
+    <string name="confirm_add_duplicate_manga">In deiner Bibliothek gibt es einen Eintrag mit dem gleichen Namen.
+\n
+\nMöchtest du trotzdem fortfahren\?</string>
+    <string name="track_error">%1$s-Fehler: %2$s</string>
+    <string name="information_required_plain">*erforderlich</string>
+    <string name="pref_hide_in_library_items">Einträge verbergen, die bereits in der Bibliothek sind</string>
+    <plurals name="download_amount">
+        <item quantity="one">Nächstes Kapitel</item>
+        <item quantity="other">Nächste %d Kapitel</item>
+    </plurals>
+    <string name="action_copy_to_clipboard">In die Zwischenablage kopieren</string>
+    <string name="action_update_category">Kategorie aktualisieren</string>
+    <string name="split_tall_images">Hohe Bilder teilen</string>
+    <string name="overlay_header">Overlay</string>
+    <string name="pref_page_rotate">Breite Seiten drehen, damit sie passen</string>
+    <plurals name="missing_chapters">
+        <item quantity="one">%1$s Kapitel fehlt</item>
+        <item quantity="other">%1$s Kapitel fehlen</item>
+    </plurals>
+    <string name="pref_page_rotate_invert">Ausrichtung gedrehter breiter Seiten spiegeln</string>
+    <string name="pref_debug_info">Debug-Info</string>
+    <string name="pref_chapter_swipe">Kapitelaktionen</string>
+    <string name="pref_chapter_swipe_end">Aktion beim Streichen nach rechts</string>
+    <string name="pref_chapter_swipe_start">Aktion beim Streichen nach links</string>
+    <string name="pref_double_tap_zoom">Zum Zoomen doppeltippen</string>
+    <string name="pref_library_columns_per_row">%d pro Zeile</string>
 </resources>

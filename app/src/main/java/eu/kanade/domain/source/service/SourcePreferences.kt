@@ -1,10 +1,10 @@
 package eu.kanade.domain.source.service
 
-import eu.kanade.domain.library.model.LibraryDisplayMode
 import eu.kanade.domain.source.interactor.SetMigrateSorting
-import eu.kanade.tachiyomi.core.preference.PreferenceStore
-import eu.kanade.tachiyomi.core.preference.getEnum
 import eu.kanade.tachiyomi.util.system.LocaleHelper
+import tachiyomi.core.preference.PreferenceStore
+import tachiyomi.core.preference.getEnum
+import tachiyomi.domain.library.model.LibraryDisplayMode
 
 class SourcePreferences(
     private val preferenceStore: PreferenceStore,
@@ -17,8 +17,6 @@ class SourcePreferences(
     fun disabledSources() = preferenceStore.getStringSet("hidden_catalogues", emptySet())
 
     fun pinnedSources() = preferenceStore.getStringSet("pinned_catalogues", emptySet())
-
-    fun duplicatePinnedSources() = preferenceStore.getBoolean("duplicate_pinned_sources", false)
 
     fun lastUsedSource() = preferenceStore.getLong("last_catalogue_source", -1)
 
@@ -34,6 +32,8 @@ class SourcePreferences(
 
     fun searchPinnedSourcesOnly() = preferenceStore.getBoolean("search_pinned_sources_only", false)
 
+    fun hideInLibraryItems() = preferenceStore.getBoolean("browse_hide_in_library_items", false)
+
     // SY -->
     fun enableSourceBlacklist() = preferenceStore.getBoolean("eh_enable_source_blacklist", true)
 
@@ -43,7 +43,7 @@ class SourcePreferences(
 
     fun sourcesTabSourcesInCategories() = preferenceStore.getStringSet("sources_tab_source_categories", mutableSetOf())
 
-    fun dataSaver() = preferenceStore.getBoolean("data_saver", false)
+    fun dataSaver() = preferenceStore.getEnum("data_saver", DataSaver.NONE)
 
     fun dataSaverIgnoreJpeg() = preferenceStore.getBoolean("ignore_jpeg", false)
 
@@ -60,5 +60,11 @@ class SourcePreferences(
     fun dataSaverExcludedSources() = preferenceStore.getStringSet("data_saver_excluded", emptySet())
 
     fun dataSaverDownloader() = preferenceStore.getBoolean("data_saver_downloader", true)
+
+    enum class DataSaver {
+        NONE,
+        BANDWIDTH_HERO,
+        WSRV_NL,
+    }
     // SY <--
 }

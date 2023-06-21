@@ -31,9 +31,9 @@ import eu.kanade.presentation.more.settings.widget.SwitchPreferenceWidget
 import eu.kanade.presentation.more.settings.widget.TextPreferenceWidget
 import eu.kanade.presentation.more.settings.widget.TrackingPreferenceWidget
 import eu.kanade.presentation.util.collectAsState
-import eu.kanade.presentation.util.secondaryItemAlpha
-import eu.kanade.tachiyomi.core.preference.PreferenceStore
 import kotlinx.coroutines.launch
+import tachiyomi.core.preference.PreferenceStore
+import tachiyomi.presentation.core.util.secondaryItemAlpha
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 
@@ -199,14 +199,6 @@ internal fun PreferenceItem(
                     } else {
                         item.login
                     },
-                )
-            }
-            is Preference.PreferenceItem.AnnotatedTextPreference -> {
-                TextPreferenceWidget(
-                    title = item.title,
-                    subtitle = item.annotatedSubtitle,
-                    icon = item.icon,
-                    onPreferenceClick = item.onClick,
                 )
             }
             // SY <--

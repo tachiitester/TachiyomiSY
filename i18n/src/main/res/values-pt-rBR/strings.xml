@@ -37,7 +37,6 @@
     <string name="action_rename_category">Renomear categoria</string>
     <string name="action_move_category">Definir categorias</string>
     <string name="action_edit_cover">Editar a capa</string>
-    <string name="action_stop">Parar</string>
     <string name="action_pause">Pausar</string>
     <string name="action_previous_chapter">Capítulo anterior</string>
     <string name="action_next_chapter">Próximo capítulo</string>
@@ -66,7 +65,7 @@
     <string name="pref_category_tracking">Monitoramento</string>
     <string name="pref_category_advanced">Avançado</string>
     <string name="pref_category_about">Sobre</string>
-    <string name="pref_library_columns">Itens por linha</string>
+    <string name="pref_library_columns">Tamanho da grade</string>
     <string name="portrait">Retrato</string>
     <string name="landscape">Paisagem</string>
     <string name="pref_library_update_interval">Atualizações automáticas</string>
@@ -97,10 +96,10 @@
     <string name="white_background">Branco</string>
     <string name="black_background">Preto</string>
     <string name="pref_viewer_type">Modo de leitura padrão</string>
-    <string name="left_to_right_viewer">Esquerda para direita</string>
-    <string name="right_to_left_viewer">Direita para esquerda</string>
-    <string name="vertical_viewer">Vertical</string>
-    <string name="webtoon_viewer">Webtoon</string>
+    <string name="left_to_right_viewer">Paginado (esquerda para direita)</string>
+    <string name="right_to_left_viewer">Paginado (direita para esquerda)</string>
+    <string name="vertical_viewer">Paginado (vertical)</string>
+    <string name="webtoon_viewer">Tira longa</string>
     <string name="pref_image_scale_type">Tipo de escala</string>
     <string name="scale_type_fit_screen">Ajustar à tela</string>
     <string name="scale_type_stretch">Estender</string>
@@ -184,10 +183,6 @@
     <string name="sort_by_source">Pela fonte</string>
     <string name="sort_by_number">Pelo número do capítulo</string>
     <string name="manga_download">Fazer download</string>
-    <string name="download_1">Próximo capítulo</string>
-    <string name="download_5">Próximos 5 capítulos</string>
-    <string name="download_10">Próximos 10 capítulos</string>
-    <string name="download_all">Todos</string>
     <string name="download_unread">Não lidos</string>
     <string name="confirm_delete_chapters">Você tem certeza que quer excluir os capítulos selecionados\?</string>
     <string name="manga_tracking_tab">Monitoramento</string>
@@ -269,8 +264,6 @@
     <string name="manga_removed_library">Removido da biblioteca</string>
     <string name="copied_to_clipboard">Copiado para a área de transferência:
 \n%1$s</string>
-    <string name="custom_download">Fazer download de uma quantidade personalizada</string>
-    <string name="download_custom">Personalizado</string>
     <string name="migration_dialog_what_to_include">Selecione os dados para incluir</string>
     <string name="migrate">Migrar</string>
     <string name="copy">Copiar</string>
@@ -321,7 +314,7 @@
     <string name="theme_dark">Ligado</string>
     <string name="theme_system">Seguir o sistema</string>
     <string name="pref_manage_notifications">Gerenciar notificações</string>
-    <string name="pref_category_security">Segurança</string>
+    <string name="pref_category_security">Segurança e privacidade</string>
     <string name="lock_with_biometrics">Exigir desbloqueio</string>
     <string name="lock_when_idle">Bloquear quando ocioso</string>
     <string name="lock_always">Sempre</string>
@@ -371,7 +364,6 @@
     <string name="action_oldest">Mais antigos</string>
     <string name="action_move_to_top">Mover para o topo</string>
     <string name="action_move_to_bottom">Mover para o final</string>
-    <string name="pref_enable_automatic_extension_updates">Procurar por atualizações de extensão</string>
     <plurals name="update_check_notification_ext_updates">
         <item quantity="one">Atualização de extensão disponível</item>
         <item quantity="many">%d atualizações de extensão disponíveis</item>
@@ -384,7 +376,7 @@
     <string name="pref_skip_filtered_chapters">Pular os capítulos filtrados</string>
     <string name="label_sources">Fontes</string>
     <string name="action_select_inverse">Inverter a seleção</string>
-    <string name="vertical_plus_viewer">Vertical contínuo</string>
+    <string name="vertical_plus_viewer">Tira longa com lacunas</string>
     <string name="webtoon_side_padding_25">25%</string>
     <string name="webtoon_side_padding_20">20%</string>
     <string name="webtoon_side_padding_15">15%</string>
@@ -421,7 +413,7 @@
         <item quantity="many">%1$s restantes</item>
         <item quantity="other">%1$s restantes</item>
     </plurals>
-    <string name="pref_search_pinned_sources_only">Incluir somente as fontes fixadas</string>
+    <string name="pref_search_pinned_sources_only">Pesquisar somente nas fontes fixadas na pesquisa global</string>
     <string name="gray_background">Cinza</string>
     <string name="viewer">Modo de leitura</string>
     <string name="pref_category_for_this_series">Para esta série</string>
@@ -437,7 +429,6 @@
         <item quantity="many">Concluído em %1$s com %2$s erros</item>
         <item quantity="other">Concluído em %1$s com %2$s erros</item>
     </plurals>
-    <string name="action_display_unread_badge">Capítulos não lidos</string>
     <string name="tracking_info">Sincronização unidirecional para atualizar o progresso dos capítulos nos serviços de monitoramento. Configure o monitoramento para itens individuais a partir de seus botões de monitoramento.</string>
     <string name="pref_refresh_library_covers">Atualizar as capas da biblioteca</string>
     <string name="unofficial_extension_message">Esta extensão não é da lista oficial de extensões do Tachiyomi.</string>
@@ -451,7 +442,6 @@
     <string name="pref_library_update_refresh_metadata">Atualizar os metadados automaticamente</string>
     <string name="action_migrate">Migrar</string>
     <string name="action_display_comfortable_grid">Grade confortável</string>
-    <string name="badges_header">Selos</string>
     <string name="action_display_show_tabs">Mostrar as abas de categoria</string>
     <string name="tabs_header">Abas</string>
     <string name="page_list_empty_error">Nenhuma página encontrada</string>
@@ -529,12 +519,10 @@
     <string name="kindlish_nav">Kindle</string>
     <string name="l_nav">Em forma de L</string>
     <string name="pref_viewer_nav">Zonas de toque</string>
-    <string name="channel_crash_logs">Registros de travamentos</string>
     <string name="track_finished_reading_date">Data de término</string>
     <string name="track_started_reading_date">Data de início</string>
-    <string name="crash_log_saved">Registros de travamento salvos</string>
     <string name="pref_dump_crash_logs_summary">Salva os registros de erro em um arquivo para o compartilhamento com os desenvolvedores</string>
-    <string name="pref_dump_crash_logs">Exportar os registros de travamentos</string>
+    <string name="pref_dump_crash_logs">Compartilhar os registros de travamentos</string>
     <string name="action_desc">Decrescente</string>
     <string name="action_asc">Crescente</string>
     <string name="action_order_by_chapter_number">Pelo número do capítulo</string>
@@ -645,7 +633,7 @@
     <string name="ext_installer_shizuku_unavailable_dialog">Instale e inicie o Shizuku para utilizá-lo como o instalador de extensões.</string>
     <string name="action_sort_count">Total de itens</string>
     <string name="pref_verbose_logging_summary">Imprime registros detalhados no registro de eventos do sistema (reduz o desempenho do aplicativo)</string>
-    <string name="pref_verbose_logging">Registro de eventos verboso</string>
+    <string name="pref_verbose_logging">Registro de eventos detalhado</string>
     <string name="action_display_language_badge">Idioma</string>
     <string name="notification_size_warning">Atualizações com muitos itens prejudicam as fontes e podem deixar as atualizações lentas e aumentar o uso da bateria. Toque para saber mais.</string>
     <string name="label_warning">Aviso</string>
@@ -670,10 +658,7 @@
     <string name="action_faq_and_guides">FAQ e Guias</string>
     <string name="webtoon_side_padding_5">5%</string>
     <string name="action_show_manga">Mostrar o item</string>
-    <string name="confirm_manga_add_duplicate">Você tem um item na sua biblioteca com o mesmo nome, mas de uma fonte diferente (%1$s).
-\n
-\nVocê deseja continuar mesmo assim\?</string>
-    <string name="pref_navigate_pan">Navegar imagens longas ao tocar</string>
+    <string name="pref_navigate_pan">Navegar imagens longas</string>
     <string name="pref_landscape_zoom">Dar zoom em imagens horizontais</string>
     <string name="action_display_cover_only_grid">Grade somente com capas</string>
     <string name="pref_update_only_started">Que não tiveram a leitura iniciada</string>
@@ -699,7 +684,6 @@
     <string name="source_empty_screen">Nenhuma fonte encontrada</string>
     <string name="action_sort_unread_count">Contagem de não lidos</string>
     <string name="action_sort_last_manga_update">Ultima checagem de atualização</string>
-    <string name="split_tall_images">Dividir imagens compridas</string>
     <string name="split_tall_images_summary">Melhora o desempenho do leitor</string>
     <string name="download_notifier_split_page_not_found">Página %d não encontrada durante a divisão</string>
     <string name="download_notifier_split_page_path_not_found">Não foi possível encontrar o caminho do arquivo da página %d</string>
@@ -707,7 +691,6 @@
     <string name="pref_reset_viewer_flags_success">Todas as configurações do leitor foram redefinidas</string>
     <string name="pref_reset_viewer_flags_error">Não foi possível redefinir as configurações do leitor</string>
     <string name="pref_reset_viewer_flags">Redefinir as configurações do leitor em cada série</string>
-    <string name="download_notifier_split_failed">Não foi possível dividir a imagem transferida</string>
     <string name="empty_screen">Bem, isso é esquisito</string>
     <string name="ext_info_version">Versão</string>
     <string name="ext_info_language">Idioma</string>
@@ -755,7 +738,7 @@
     <string name="action_search_hint">Pesquisar…</string>
     <string name="pref_general_summary">Idioma do aplicativo, notificações</string>
     <string name="pref_appearance_summary">Tema, formato de data e hora</string>
-    <string name="pref_library_summary">Categorias, atualização global</string>
+    <string name="pref_library_summary">Categorias, atualização global, ações do capítulo</string>
     <string name="pref_reader_summary">Modo de leitura, exibição, navegação</string>
     <string name="pref_downloads_summary">Download automático, download a frente</string>
     <string name="pref_tracking_summary">Sincronização de progresso unidirecional, sincronização aprimorada</string>
@@ -765,24 +748,21 @@
     <string name="pref_advanced_summary">Exportar registros de travamento, otimizações de bateria</string>
     <string name="crash_screen_title">Ooops!</string>
     <string name="crash_screen_restart_application">Reiniciar o aplicativo</string>
-    <string name="crash_screen_description">%s teve um erro inesperado. Nós sugerimos que você capture a tela com essa mensagem, exporte os registros de travamento e então compartilhá-los no nosso canal de suporte no Discord.</string>
+    <string name="crash_screen_description">%s teve um erro inesperado. Nós sugerimos que você compartilhe os registros de travamento em nosso canal de suporte no Discord.</string>
     <string name="unknown_title">Título desconhecido</string>
     <string name="invalid_location">Local inválido: %s</string>
     <string name="error_user_agent_string_invalid">Valor de user agent inválido</string>
     <string name="updates_last_update_info_just_now">Agora</string>
-    <string name="download_notifier_cache_renewal">Indexando os downloads</string>
-    <string name="channel_downloader_cache">Indexando</string>
+    <string name="download_notifier_cache_renewal">Verificando os downloads</string>
     <string name="action_open_random_manga">Abrir um item aleatório</string>
     <string name="information_no_entries_found">Nenhum item encontrado nesta categoria</string>
     <string name="fdroid_warning">Compilações do F-Droid não são suportadas oficialmente.
 \nToque para saber mais.</string>
-    <string name="action_display_show_continue_reading_button">Mostrar o botão de continuar a leitura</string>
-    <string name="other_header">Outros</string>
+    <string name="action_display_show_continue_reading_button">Botão de continuar a leitura</string>
     <string name="track_remove_date_conf_title">Remover data\?</string>
     <string name="track_remove_start_date_conf_text">Isto irá remover sua data de início selecionada anteriormente no %s</string>
     <string name="track_remove_finish_date_conf_text">Isto irá remover sua data de término selecionada anteriormente no %s</string>
     <string name="pref_invalidate_download_cache">Invalidar o índice de downloads</string>
-    <string name="enhanced_tracking_warning">Este monitorador é compatível somente com a fonte %1$s.</string>
     <string name="pref_invalidate_download_cache_summary">Força o aplicativo a checar novamente por capítulos disponíveis offline</string>
     <string name="label_local">Local</string>
     <string name="label_downloaded">Disponíveis offline</string>
@@ -808,6 +788,34 @@
     <string name="information_no_manga_category">A categoria está vazia</string>
     <string name="pref_library_update_show_tab_badge">Mostrar a contagem no ícone de Atualizações</string>
     <string name="copied_to_clipboard_plain">Copiado para a área de transferência</string>
-    <string name="pref_worker_info">Informações do worker</string>
-    <string name="ext_miui_warning">A instalação de extensões pode não funcionar se a Otimização da MIUI estiver habilitada. Tente desabilitá-la ou instalar as extensões a partir do site.</string>
+    <string name="enhanced_services_not_installed">Disponíveis, mas a fonte não está instalada: %s</string>
+    <string name="pref_skip_dupe_chapters">Pular capítulos duplicados</string>
+    <string name="confirm_add_duplicate_manga">Você possui um item na sua biblioteca com o mesmo nome.
+\n
+\nVocê ainda deseja continuar\?</string>
+    <string name="track_error">Erro em %1$s: %2$s</string>
+    <string name="information_required_plain">*obrigatório</string>
+    <plurals name="download_amount">
+        <item quantity="one">Próximo capítulo</item>
+        <item quantity="many">Próximos %d capítulos</item>
+        <item quantity="other">Próximos %d capítulos</item>
+    </plurals>
+    <string name="pref_hide_in_library_items">Ocultar títulos que já estão na biblioteca</string>
+    <string name="action_copy_to_clipboard">Copiar para a área de transferência</string>
+    <string name="action_update_category">Atualizar categoria</string>
+    <string name="split_tall_images">Dividir imagens compridas</string>
+    <string name="overlay_header">Sobreposição</string>
+    <string name="pref_page_rotate">Rotacionar páginas largas para caber</string>
+    <string name="pref_page_rotate_invert">Inverter a orientação das páginas largas rotacionadas</string>
+    <plurals name="missing_chapters">
+        <item quantity="one">Faltando %1$s capítulo</item>
+        <item quantity="many">Faltando %1$s capítulos</item>
+        <item quantity="other">Faltando %1$s capítulos</item>
+    </plurals>
+    <string name="pref_debug_info">Informações de depuração</string>
+    <string name="pref_chapter_swipe">Ações do capítulo</string>
+    <string name="pref_chapter_swipe_end">Ação de deslizar para a direita</string>
+    <string name="pref_chapter_swipe_start">Ação de deslizar para a esquerda</string>
+    <string name="pref_double_tap_zoom">Toque duplo para dar zoom</string>
+    <string name="pref_library_columns_per_row">%d por linha</string>
 </resources>

@@ -1,5 +1,8 @@
 -dontobfuscate
 
+-keep,allowoptimization class eu.kanade.**
+-keep,allowoptimization class tachiyomi.**
+
 # Keep common dependencies used in extensions
 -keep,allowoptimization class androidx.preference.** { public protected *; }
 -keep,allowoptimization class kotlin.** { public protected *; }
@@ -62,6 +65,14 @@
     kotlinx.serialization.KSerializer serializer(...);
 }
 
+-keep,includedescriptorclasses class tachiyomi.**$$serializer { *; }
+-keepclassmembers class tachiyomi.** {
+    *** Companion;
+}
+-keepclasseswithmembers class tachiyomi.** {
+    kotlinx.serialization.KSerializer serializer(...);
+}
+
 -keep,includedescriptorclasses class exh.**$$serializer { *; }
 -keepclassmembers class exh.** {
     *** Companion;
@@ -109,6 +120,19 @@
 
 # XmlUtil
 -keep public enum nl.adaptivity.xmlutil.EventType { *; }
+
+# Firebase
+-keep class com.google.firebase.installations.** { *; }
+-keep interface com.google.firebase.installations.** { *; }
+
+# SY -->
+# SqlCipher
+-keepclassmembers class net.zetetic.database.sqlcipher.SQLiteCustomFunction { *; }
+-keepclassmembers class net.zetetic.database.sqlcipher.SQLiteConnection { *; }
+-keepclassmembers class net.zetetic.database.sqlcipher.SQLiteGlobal { *; }
+-keepclassmembers class net.zetetic.database.sqlcipher.SQLiteDebug { *; }
+-keepclassmembers class net.zetetic.database.sqlcipher.SQLiteDebug$* { *; }
+# SY <--
 
 # Design library
 -dontwarn com.google.android.material.**
@@ -235,3 +259,20 @@
 -keep class com.google.apphosting.api.ApiProxy {
   static *** getCurrentEnvironment (...);
 }
+
+# R8 full mode
+ -keepattributes Signature
+ -keep,allowoptimization class kotlin.coroutines.Continuation
+ -keep,allowoptimization class * extends uy.kohesive.injekt.api.TypeReference
+ -keep,allowoptimization public class io.requery.android.database.sqlite.SQLiteConnection { *; }
+
+# Suggested rules
+-dontwarn com.oracle.svm.core.annotate.AutomaticFeature
+-dontwarn com.oracle.svm.core.annotate.Delete
+-dontwarn com.oracle.svm.core.annotate.Substitute
+-dontwarn com.oracle.svm.core.annotate.TargetClass
+-dontwarn com.oracle.svm.core.configure.ResourcesRegistry
+-dontwarn org.graalvm.nativeimage.ImageSingletons
+-dontwarn org.graalvm.nativeimage.hosted.Feature$BeforeAnalysisAccess
+-dontwarn org.graalvm.nativeimage.hosted.Feature
+-dontwarn org.slf4j.impl.StaticLoggerBinder

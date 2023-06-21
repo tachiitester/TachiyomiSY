@@ -2,20 +2,21 @@ package exh
 
 import android.content.Context
 import androidx.core.net.toUri
-import eu.kanade.domain.chapter.interactor.GetChapter
 import eu.kanade.domain.chapter.interactor.SyncChaptersWithSource
-import eu.kanade.domain.chapter.model.Chapter
-import eu.kanade.domain.manga.interactor.GetManga
-import eu.kanade.domain.manga.interactor.NetworkToLocalManga
 import eu.kanade.domain.manga.interactor.UpdateManga
-import eu.kanade.domain.manga.model.Manga
+import eu.kanade.domain.manga.model.toSManga
 import eu.kanade.domain.source.service.SourcePreferences
 import eu.kanade.tachiyomi.R
-import eu.kanade.tachiyomi.source.SourceManager
 import eu.kanade.tachiyomi.source.online.UrlImportableSource
 import eu.kanade.tachiyomi.source.online.all.EHentai
 import exh.log.xLogStack
 import exh.source.getMainSource
+import tachiyomi.domain.chapter.interactor.GetChapter
+import tachiyomi.domain.chapter.model.Chapter
+import tachiyomi.domain.manga.interactor.GetManga
+import tachiyomi.domain.manga.interactor.NetworkToLocalManga
+import tachiyomi.domain.manga.model.Manga
+import tachiyomi.domain.source.service.SourceManager
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 
@@ -58,6 +59,7 @@ class GalleryAdder(
         fav: Boolean = false,
         forceSource: UrlImportableSource? = null,
         throttleFunc: suspend () -> Unit = {},
+        retry: Int = 1,
     ): GalleryAddEvent {
         logger.d(context.getString(R.string.gallery_adder_importing_gallery, url, fav.toString(), forceSource))
         try {
@@ -137,7 +139,7 @@ class GalleryAdder(
                 )
 
             // Fetch and copy details
-            val newManga = source.getMangaDetails(manga.toSManga())
+            val newManga = retry(retry) { source.getMangaDetails(manga.toSManga()) }
             updateManga.awaitUpdateFromSource(manga, newManga, false)
             manga = getManga.await(manga.id)!!
 
@@ -148,10 +150,12 @@ class GalleryAdder(
 
             // Fetch and copy chapters
             try {
-                val chapterList = if (source is EHentai) {
-                    source.getChapterList(manga.toSManga(), throttleFunc)
-                } else {
-                    source.getChapterList(manga.toSManga())
+                val chapterList = retry(retry) {
+                    if (source is EHentai) {
+                        source.getChapterList(manga.toSManga(), throttleFunc)
+                    } else {
+                        source.getChapterList(manga.toSManga())
+                    }
                 }
 
                 if (chapterList.isNotEmpty()) {
@@ -184,6 +188,29 @@ class GalleryAdder(
                 ((e.message ?: "Unknown error!") + " (Gallery: $url)").trim(),
             )
         }
+    }
+
+    private inline fun <T : Any> retry(retryCount: Int, block: () -> T): T {
+        var result: T? = null
+        var lastError: Exception? = null
+
+        for (i in 1..retryCount) {
+            try {
+                result = block()
+                break
+            } catch (e: Exception) {
+                if (e is EHentai.GalleryNotFoundException) {
+                    throw e
+                }
+                lastError = e
+            }
+        }
+
+        if (lastError != null) {
+            throw lastError
+        }
+
+        return result!!
     }
 }
 

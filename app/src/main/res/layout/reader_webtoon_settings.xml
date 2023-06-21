@@ -47,6 +47,15 @@
         android:textColor="?android:attr/textColorSecondary" />
 
     <com.google.android.material.materialswitch.MaterialSwitch
+        android:id="@+id/smooth_scroll_webtoon"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="16dp"
+        android:textColor="?android:attr/textColorSecondary"
+        android:text="@string/pref_smooth_scroll"/>
+
+    <com.google.android.material.materialswitch.MaterialSwitch
         android:id="@+id/page_transitions_webtoon"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -91,6 +100,15 @@
         android:paddingStart="16dp"
         android:paddingEnd="16dp"
         android:text="@string/pref_long_strip_split"
+        android:textColor="?android:attr/textColorSecondary" />
+
+    <com.google.android.material.materialswitch.MaterialSwitch
+        android:id="@+id/double_tap_zoom"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:text="@string/pref_double_tap_zoom"
         android:textColor="?android:attr/textColorSecondary" />
 
     <TextView

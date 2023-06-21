@@ -1,54 +1,29 @@
-@file:Suppress("DEPRECATION")
-
 package exh
 
 import android.content.Context
 import androidx.core.content.edit
 import androidx.preference.PreferenceManager
-import eu.kanade.data.DatabaseHandler
-import eu.kanade.data.category.categoryMapper
-import eu.kanade.data.chapter.chapterMapper
-import eu.kanade.domain.backup.service.BackupPreferences
 import eu.kanade.domain.base.BasePreferences
-import eu.kanade.domain.chapter.interactor.DeleteChapters
-import eu.kanade.domain.chapter.interactor.UpdateChapter
-import eu.kanade.domain.chapter.model.ChapterUpdate
-import eu.kanade.domain.library.service.LibraryPreferences
-import eu.kanade.domain.manga.interactor.GetManga
-import eu.kanade.domain.manga.interactor.GetMangaBySource
-import eu.kanade.domain.manga.interactor.InsertMergedReference
 import eu.kanade.domain.manga.interactor.UpdateManga
-import eu.kanade.domain.manga.model.MangaUpdate
-import eu.kanade.domain.source.interactor.InsertFeedSavedSearch
-import eu.kanade.domain.source.interactor.InsertSavedSearch
 import eu.kanade.domain.source.service.SourcePreferences
 import eu.kanade.domain.ui.UiPreferences
 import eu.kanade.tachiyomi.BuildConfig
-import eu.kanade.tachiyomi.core.preference.PreferenceStore
 import eu.kanade.tachiyomi.core.security.SecurityPreferences
-import eu.kanade.tachiyomi.data.backup.BackupCreatorJob
-import eu.kanade.tachiyomi.data.database.models.Manga
+import eu.kanade.tachiyomi.data.backup.BackupCreateJob
 import eu.kanade.tachiyomi.data.library.LibraryUpdateJob
-import eu.kanade.tachiyomi.data.preference.MANGA_NON_COMPLETED
-import eu.kanade.tachiyomi.data.preference.PreferenceValues
 import eu.kanade.tachiyomi.data.track.TrackManager
-import eu.kanade.tachiyomi.data.updater.AppUpdateJob
-import eu.kanade.tachiyomi.extension.ExtensionUpdateJob
 import eu.kanade.tachiyomi.network.NetworkPreferences
 import eu.kanade.tachiyomi.network.PREF_DOH_CLOUDFLARE
 import eu.kanade.tachiyomi.source.Source
-import eu.kanade.tachiyomi.source.SourceManager
 import eu.kanade.tachiyomi.source.online.all.NHentai
 import eu.kanade.tachiyomi.ui.reader.setting.OrientationType
 import eu.kanade.tachiyomi.ui.reader.setting.ReaderPreferences
 import eu.kanade.tachiyomi.util.preference.minusAssign
 import eu.kanade.tachiyomi.util.system.DeviceUtil
-import eu.kanade.tachiyomi.util.system.logcat
+import eu.kanade.tachiyomi.util.system.isReleaseBuildType
+import eu.kanade.tachiyomi.util.system.workManager
 import exh.eh.EHentaiUpdateWorker
 import exh.log.xLogE
-import exh.merged.sql.models.MergedMangaReference
-import exh.savedsearches.models.FeedSavedSearch
-import exh.savedsearches.models.SavedSearch
 import exh.source.BlacklistedSources
 import exh.source.EH_SOURCE_ID
 import exh.source.HBROWSE_SOURCE_ID
@@ -66,13 +41,34 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonPrimitive
-import uy.kohesive.injekt.Injekt
-import uy.kohesive.injekt.api.get
+import tachiyomi.core.preference.PreferenceStore
+import tachiyomi.core.preference.getEnum
+import tachiyomi.core.util.system.logcat
+import tachiyomi.data.DatabaseHandler
+import tachiyomi.data.category.categoryMapper
+import tachiyomi.data.chapter.chapterMapper
+import tachiyomi.domain.backup.service.BackupPreferences
+import tachiyomi.domain.chapter.interactor.DeleteChapters
+import tachiyomi.domain.chapter.interactor.UpdateChapter
+import tachiyomi.domain.chapter.model.ChapterUpdate
+import tachiyomi.domain.library.service.LibraryPreferences
+import tachiyomi.domain.library.service.LibraryPreferences.Companion.MANGA_NON_COMPLETED
+import tachiyomi.domain.manga.interactor.GetManga
+import tachiyomi.domain.manga.interactor.GetMangaBySource
+import tachiyomi.domain.manga.interactor.InsertMergedReference
+import tachiyomi.domain.manga.model.Manga
+import tachiyomi.domain.manga.model.MangaUpdate
+import tachiyomi.domain.manga.model.MergedMangaReference
+import tachiyomi.domain.manga.model.TriStateFilter
+import tachiyomi.domain.source.interactor.InsertFeedSavedSearch
+import tachiyomi.domain.source.interactor.InsertSavedSearch
+import tachiyomi.domain.source.model.FeedSavedSearch
+import tachiyomi.domain.source.model.SavedSearch
+import tachiyomi.domain.source.service.SourceManager
 import uy.kohesive.injekt.injectLazy
 import java.io.File
 import java.net.URI
 import java.net.URISyntaxException
-import eu.kanade.domain.manga.model.Manga as DomainManga
 
 object EXHMigrations {
     private val handler: DatabaseHandler by injectLazy()
@@ -102,6 +98,7 @@ object EXHMigrations {
         libraryPreferences: LibraryPreferences,
         readerPreferences: ReaderPreferences,
         backupPreferences: BackupPreferences,
+        trackManager: TrackManager,
     ): Boolean {
         val lastVersionCode = preferenceStore.getInt("eh_last_version_code", 0)
         val oldVersion = lastVersionCode.get()
@@ -109,12 +106,8 @@ object EXHMigrations {
             if (oldVersion < BuildConfig.VERSION_CODE) {
                 lastVersionCode.set(BuildConfig.VERSION_CODE)
 
-                if (BuildConfig.INCLUDE_UPDATER) {
-                    AppUpdateJob.setupTask(context)
-                }
-                ExtensionUpdateJob.setupTask(context)
                 LibraryUpdateJob.setupTask(context)
-                BackupCreatorJob.setupTask(context)
+                BackupCreateJob.setupTask(context)
                 EHentaiUpdateWorker.scheduleBackground(context)
 
                 // Fresh install
@@ -153,7 +146,7 @@ object EXHMigrations {
                                     mergedManga.first.copy(url = it)
                                 } ?: mergedManga.first
                                 mergedMangaReferences += MergedMangaReference(
-                                    id = null,
+                                    id = -1,
                                     isInfoManga = false,
                                     getChapterUpdates = false,
                                     chapterSortMode = 0,
@@ -168,7 +161,7 @@ object EXHMigrations {
                                 mergedManga.second.children.distinct().forEachIndexed { index, mangaSource ->
                                     val load = mangaSource.load() ?: return@forEachIndexed
                                     mergedMangaReferences += MergedMangaReference(
-                                        id = null,
+                                        id = -1,
                                         isInfoManga = index == 0,
                                         getChapterUpdates = true,
                                         chapterSortMode = 0,
@@ -212,7 +205,6 @@ object EXHMigrations {
                 }
                 if (oldVersion under 12) {
                     // Force MAL log out due to login flow change
-                    val trackManager = Injekt.get<TrackManager>()
                     trackManager.myAnimeList.logout()
                 }
                 if (oldVersion under 14) {
@@ -358,8 +350,8 @@ object EXHMigrations {
                     if (oldSecureScreen) {
                         securityPreferences.secureScreen().set(SecurityPreferences.SecureScreenMode.ALWAYS)
                     }
-                    if (DeviceUtil.isMiui && basePreferences.extensionInstaller().get() == PreferenceValues.ExtensionInstaller.PACKAGEINSTALLER) {
-                        basePreferences.extensionInstaller().set(PreferenceValues.ExtensionInstaller.LEGACY)
+                    if (DeviceUtil.isMiui && basePreferences.extensionInstaller().get() == BasePreferences.ExtensionInstaller.PACKAGEINSTALLER) {
+                        basePreferences.extensionInstaller().set(BasePreferences.ExtensionInstaller.LEGACY)
                     }
                 }
                 if (oldVersion under 28) {
@@ -377,7 +369,7 @@ object EXHMigrations {
                     }
                 }
                 if (oldVersion under 30) {
-                    BackupCreatorJob.setupTask(context)
+                    BackupCreateJob.setupTask(context)
                 }
                 if (oldVersion under 31) {
                     runBlocking {
@@ -463,7 +455,7 @@ object EXHMigrations {
                     }
                     if (backupPreferences.backupInterval().get() == 0) {
                         backupPreferences.backupInterval().set(12)
-                        BackupCreatorJob.setupTask(context)
+                        BackupCreateJob.setupTask(context)
                     }
                 }
                 if (oldVersion under 41) {
@@ -512,8 +504,50 @@ object EXHMigrations {
                 }
                 if (oldVersion under 45) {
                     // Force MangaDex log out due to login flow change
-                    val trackManager = Injekt.get<TrackManager>()
                     trackManager.mdList.logout()
+                }
+                if (oldVersion under 51) {
+                    LibraryUpdateJob.cancelAllWorks(context)
+                    LibraryUpdateJob.setupTask(context)
+                    // Removed background jobs
+                    context.workManager.cancelAllWorkByTag("UpdateChecker")
+                    context.workManager.cancelAllWorkByTag("ExtensionUpdate")
+                    prefs.edit {
+                        remove("automatic_ext_updates")
+                    }
+                    val prefKeys = listOf(
+                        "pref_filter_library_downloaded",
+                        "pref_filter_library_unread",
+                        "pref_filter_library_started",
+                        "pref_filter_library_bookmarked",
+                        "pref_filter_library_completed",
+                        "pref_filter_library_lewd",
+                    ) + trackManager.services.map { "pref_filter_library_tracked_${it.id}" }
+
+                    prefKeys.forEach { key ->
+                        val pref = preferenceStore.getInt(key, 0)
+                        prefs.edit {
+                            remove(key)
+
+                            val newValue = when (pref.get()) {
+                                1 -> TriStateFilter.ENABLED_IS
+                                2 -> TriStateFilter.ENABLED_NOT
+                                else -> TriStateFilter.DISABLED
+                            }
+
+                            preferenceStore.getEnum("${key}_v2", TriStateFilter.DISABLED).set(newValue)
+                        }
+                    }
+                }
+                if (oldVersion under 52) {
+                    BackupCreateJob.setupTask(context)
+                }
+                if (oldVersion under 53) {
+                    // This was accidentally visible from the reader settings sheet, but should always
+                    // be disabled in release builds.
+                    if (isReleaseBuildType) {
+                        readerPreferences.longStripSplitWebtoon().set(false)
+                    }
                 }
 
                 // if (oldVersion under 1) { } (1 is current release version)
@@ -527,28 +561,39 @@ object EXHMigrations {
         return false
     }
 
-    fun migrateBackupEntry(manga: Manga) {
-        if (manga.source == 6907L) {
-            // Migrate the old source to the delegated one
-            manga.source = NHentai.otherId
-            // Migrate nhentai URLs
-            manga.url = getUrlWithoutDomain(manga.url)
+    fun migrateBackupEntry(manga: Manga): Manga {
+        var newManga = manga
+        if (newManga.source == 6907L) {
+            newManga = newManga.copy(
+                // Migrate the old source to the delegated one
+                source = NHentai.otherId,
+                // Migrate nhentai URLs
+                url = getUrlWithoutDomain(newManga.url),
+            )
         }
 
         // Migrate Tsumino source IDs
-        if (manga.source == 6909L) {
-            manga.source = TSUMINO_SOURCE_ID
+        if (newManga.source == 6909L) {
+            newManga = newManga.copy(
+                source = TSUMINO_SOURCE_ID,
+            )
         }
 
-        if (manga.source == 6912L) {
-            manga.source = HBROWSE_SOURCE_ID
-            manga.url = manga.url + "/c00001/"
+        if (newManga.source == 6912L) {
+            newManga = newManga.copy(
+                source = HBROWSE_SOURCE_ID,
+                url = newManga.url + "/c00001/",
+            )
         }
 
         // Allow importing of EHentai extension backups
-        if (manga.source in BlacklistedSources.EHENTAI_EXT_SOURCES) {
-            manga.source = EH_SOURCE_ID
+        if (newManga.source in BlacklistedSources.EHENTAI_EXT_SOURCES) {
+            newManga = newManga.copy(
+                source = EH_SOURCE_ID,
+            )
         }
+
+        return newManga
     }
 
     private fun getUrlWithoutDomain(orig: String): String {
@@ -593,7 +638,7 @@ object EXHMigrations {
         }
     }
 
-    private fun readMangaConfig(manga: DomainManga): MangaConfig? {
+    private fun readMangaConfig(manga: Manga): MangaConfig? {
         return MangaConfig.readFromUrl(manga.url)
     }
 
@@ -619,7 +664,7 @@ object EXHMigrations {
         }
     }
 
-    private data class LoadedMangaSource(val source: Source, val manga: DomainManga)
+    private data class LoadedMangaSource(val source: Source, val manga: Manga)
 
     private fun updateSourceId(newId: Long, oldId: Long) {
         runBlocking {

@@ -1,25 +1,28 @@
 package exh.eh
 
 import android.content.Context
-import eu.kanade.domain.category.interactor.GetCategories
-import eu.kanade.domain.category.interactor.SetMangaCategories
-import eu.kanade.domain.chapter.interactor.GetChapterByMangaId
-import eu.kanade.domain.chapter.interactor.GetChapterByUrl
-import eu.kanade.domain.chapter.model.Chapter
-import eu.kanade.domain.chapter.model.ChapterUpdate
-import eu.kanade.domain.chapter.repository.ChapterRepository
-import eu.kanade.domain.history.interactor.GetHistoryByMangaId
-import eu.kanade.domain.history.interactor.RemoveHistory
-import eu.kanade.domain.history.interactor.UpsertHistory
-import eu.kanade.domain.history.model.History
-import eu.kanade.domain.history.model.HistoryUpdate
-import eu.kanade.domain.manga.interactor.GetManga
 import eu.kanade.domain.manga.interactor.UpdateManga
-import eu.kanade.domain.manga.model.Manga
-import eu.kanade.domain.manga.model.MangaUpdate
+import exh.metadata.metadata.EHentaiSearchMetadata
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import tachiyomi.domain.category.interactor.GetCategories
+import tachiyomi.domain.category.interactor.SetMangaCategories
+import tachiyomi.domain.chapter.interactor.GetChapterByMangaId
+import tachiyomi.domain.chapter.interactor.GetChapterByUrl
+import tachiyomi.domain.chapter.model.Chapter
+import tachiyomi.domain.chapter.model.ChapterUpdate
+import tachiyomi.domain.chapter.repository.ChapterRepository
+import tachiyomi.domain.history.interactor.GetHistoryByMangaId
+import tachiyomi.domain.history.interactor.RemoveHistory
+import tachiyomi.domain.history.interactor.UpsertHistory
+import tachiyomi.domain.history.model.History
+import tachiyomi.domain.history.model.HistoryUpdate
+import tachiyomi.domain.manga.interactor.GetManga
+import tachiyomi.domain.manga.interactor.InsertFavoriteEntryAlternative
+import tachiyomi.domain.manga.model.FavoriteEntryAlternative
+import tachiyomi.domain.manga.model.Manga
+import tachiyomi.domain.manga.model.MangaUpdate
 import uy.kohesive.injekt.injectLazy
 import java.io.File
 
@@ -41,6 +44,7 @@ class EHentaiUpdateHelper(context: Context) {
     private val upsertHistory: UpsertHistory by injectLazy()
     private val removeHistory: RemoveHistory by injectLazy()
     private val getHistoryByMangaId: GetHistoryByMangaId by injectLazy()
+    private val insertFavoriteEntryAlternative: InsertFavoriteEntryAlternative by injectLazy()
 
     /**
      * @param chapters Cannot be an empty list!
@@ -123,6 +127,12 @@ class EHentaiUpdateHelper(context: Context) {
                 upsertHistory.await(it)
             }
 
+            // Update favorites entry database
+            val favoriteEntryUpdate = getFavoriteEntryAlternative(accepted, toDiscard)
+            if (favoriteEntryUpdate != null) {
+                insertFavoriteEntryAlternative.await(favoriteEntryUpdate)
+            }
+
             // Copy categories from all chains to accepted manga
 
             val newCategories = rootsToMutate.flatMap { chapterChain ->
@@ -145,7 +155,24 @@ class EHentaiUpdateHelper(context: Context) {
         }
     }
 
-    fun getHistory(
+    private fun getFavoriteEntryAlternative(
+        accepted: ChapterChain,
+        toDiscard: List<ChapterChain>,
+    ): FavoriteEntryAlternative? {
+        val favorite = toDiscard.find { it.manga.favorite } ?: return null
+
+        val gid = EHentaiSearchMetadata.galleryId(accepted.manga.url)
+        val token = EHentaiSearchMetadata.galleryToken(accepted.manga.url)
+
+        return FavoriteEntryAlternative(
+            otherGid = gid,
+            otherToken = token,
+            gid = EHentaiSearchMetadata.galleryId(favorite.manga.url),
+            token = EHentaiSearchMetadata.galleryToken(favorite.manga.url),
+        )
+    }
+
+    private fun getHistory(
         currentChapters: List<Chapter>,
         chainsAsChapters: List<Chapter>,
         chainsAsHistory: List<History>,

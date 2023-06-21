@@ -27,18 +27,18 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.model.rememberScreenModel
-import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import eu.kanade.presentation.components.AppBar
-import eu.kanade.presentation.components.Button
-import eu.kanade.presentation.components.LazyColumn
-import eu.kanade.presentation.components.Scaffold
-import eu.kanade.presentation.util.padding
-import eu.kanade.presentation.util.plus
+import eu.kanade.presentation.util.Screen
 import eu.kanade.tachiyomi.R
+import tachiyomi.presentation.core.components.LazyColumn
+import tachiyomi.presentation.core.components.material.Button
+import tachiyomi.presentation.core.components.material.Scaffold
+import tachiyomi.presentation.core.components.material.padding
+import tachiyomi.presentation.core.util.plus
 
-class BatchAddScreen : Screen {
+class BatchAddScreen : Screen() {
 
     @Composable
     override fun Content() {
@@ -100,12 +100,18 @@ class BatchAddScreen : Screen {
                                     Modifier.fillMaxWidth(),
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
-                                    LinearProgressIndicator(
-                                        progress = state.progress.toFloat() / state.progressTotal,
-                                        Modifier
-                                            .padding(top = 2.dp)
-                                            .weight(1f),
-                                    )
+                                    val progress = state.progress.toFloat()
+                                    if (state.progressTotal > 0 && !progress.isNaN()) {
+                                        val realProgress = progress / state.progressTotal
+                                        if (!realProgress.isNaN()) {
+                                            LinearProgressIndicator(
+                                                progress = realProgress,
+                                                Modifier
+                                                    .padding(top = 2.dp)
+                                                    .weight(1f),
+                                            )
+                                        }
+                                    }
                                     Text(
                                         text = state.progress.toString() + "/" + state.progressTotal,
                                         modifier = Modifier.weight(0.15f),

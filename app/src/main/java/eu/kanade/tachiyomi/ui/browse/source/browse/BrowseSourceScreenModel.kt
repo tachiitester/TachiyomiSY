@@ -1,6 +1,5 @@
 package eu.kanade.tachiyomi.ui.browse.source.browse
 
-import android.content.Context
 import android.content.res.Configuration
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.runtime.Immutable
@@ -13,80 +12,37 @@ import androidx.paging.cachedIn
 import androidx.paging.map
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.coroutineScope
-import cafe.adriel.voyager.navigator.Navigator
-import eu.davidea.flexibleadapter.items.IFlexible
-import eu.kanade.core.prefs.CheckboxState
-import eu.kanade.core.prefs.asState
-import eu.kanade.core.prefs.mapAsCheckboxState
-import eu.kanade.domain.UnsortedPreferences
-import eu.kanade.domain.category.interactor.GetCategories
-import eu.kanade.domain.category.interactor.SetMangaCategories
-import eu.kanade.domain.category.model.Category
-import eu.kanade.domain.chapter.interactor.GetChapterByMangaId
-import eu.kanade.domain.chapter.interactor.SetMangaDefaultChapterFlags
+import eu.kanade.core.preference.asState
 import eu.kanade.domain.chapter.interactor.SyncChaptersWithTrackServiceTwoWay
-import eu.kanade.domain.library.service.LibraryPreferences
-import eu.kanade.domain.manga.interactor.GetDuplicateLibraryManga
-import eu.kanade.domain.manga.interactor.GetFlatMetadataById
-import eu.kanade.domain.manga.interactor.GetManga
-import eu.kanade.domain.manga.interactor.NetworkToLocalManga
 import eu.kanade.domain.manga.interactor.UpdateManga
-import eu.kanade.domain.manga.model.Manga
 import eu.kanade.domain.manga.model.toDomainManga
-import eu.kanade.domain.manga.model.toMangaUpdate
-import eu.kanade.domain.source.interactor.DeleteSavedSearchById
 import eu.kanade.domain.source.interactor.GetExhSavedSearch
-import eu.kanade.domain.source.interactor.GetRemoteManga
-import eu.kanade.domain.source.interactor.InsertSavedSearch
-import eu.kanade.domain.source.model.SourcePagingSourceType
 import eu.kanade.domain.source.service.SourcePreferences
-import eu.kanade.domain.track.interactor.InsertTrack
 import eu.kanade.domain.track.model.toDomainTrack
+import eu.kanade.domain.ui.UiPreferences
+import eu.kanade.presentation.util.ioCoroutineScope
 import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.data.cache.CoverCache
 import eu.kanade.tachiyomi.data.track.EnhancedTrackService
 import eu.kanade.tachiyomi.data.track.TrackManager
 import eu.kanade.tachiyomi.data.track.TrackService
 import eu.kanade.tachiyomi.source.CatalogueSource
-import eu.kanade.tachiyomi.source.Source
-import eu.kanade.tachiyomi.source.SourceManager
 import eu.kanade.tachiyomi.source.model.FilterList
 import eu.kanade.tachiyomi.source.online.MetadataSource
-import eu.kanade.tachiyomi.ui.browse.source.filter.AutoComplete
-import eu.kanade.tachiyomi.ui.browse.source.filter.AutoCompleteSectionItem
-import eu.kanade.tachiyomi.ui.browse.source.filter.CheckboxItem
-import eu.kanade.tachiyomi.ui.browse.source.filter.CheckboxSectionItem
-import eu.kanade.tachiyomi.ui.browse.source.filter.GroupItem
-import eu.kanade.tachiyomi.ui.browse.source.filter.HeaderItem
-import eu.kanade.tachiyomi.ui.browse.source.filter.SelectItem
-import eu.kanade.tachiyomi.ui.browse.source.filter.SelectSectionItem
-import eu.kanade.tachiyomi.ui.browse.source.filter.SeparatorItem
-import eu.kanade.tachiyomi.ui.browse.source.filter.SortGroup
-import eu.kanade.tachiyomi.ui.browse.source.filter.SortItem
-import eu.kanade.tachiyomi.ui.browse.source.filter.TextItem
-import eu.kanade.tachiyomi.ui.browse.source.filter.TextSectionItem
-import eu.kanade.tachiyomi.ui.browse.source.filter.TriStateItem
-import eu.kanade.tachiyomi.ui.browse.source.filter.TriStateSectionItem
-import eu.kanade.tachiyomi.util.lang.launchIO
-import eu.kanade.tachiyomi.util.lang.launchNonCancellable
-import eu.kanade.tachiyomi.util.lang.withIOContext
-import eu.kanade.tachiyomi.util.lang.withNonCancellableContext
-import eu.kanade.tachiyomi.util.lang.withUIContext
+import eu.kanade.tachiyomi.source.online.all.MangaDex
 import eu.kanade.tachiyomi.util.removeCovers
-import eu.kanade.tachiyomi.util.system.logcat
-import eu.kanade.tachiyomi.util.system.toast
 import exh.metadata.metadata.base.RaisedSearchMetadata
-import exh.savedsearches.EXHSavedSearch
-import exh.savedsearches.models.SavedSearch
 import exh.source.getMainSource
-import exh.util.nullIfBlank
+import exh.source.mangaDexSourceIds
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
@@ -99,6 +55,33 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import logcat.LogPriority
+import tachiyomi.core.preference.CheckboxState
+import tachiyomi.core.preference.mapAsCheckboxState
+import tachiyomi.core.util.lang.launchIO
+import tachiyomi.core.util.lang.launchNonCancellable
+import tachiyomi.core.util.lang.withUIContext
+import tachiyomi.core.util.system.logcat
+import tachiyomi.domain.UnsortedPreferences
+import tachiyomi.domain.category.interactor.GetCategories
+import tachiyomi.domain.category.interactor.SetMangaCategories
+import tachiyomi.domain.category.model.Category
+import tachiyomi.domain.chapter.interactor.GetChapterByMangaId
+import tachiyomi.domain.chapter.interactor.SetMangaDefaultChapterFlags
+import tachiyomi.domain.library.service.LibraryPreferences
+import tachiyomi.domain.manga.interactor.GetDuplicateLibraryManga
+import tachiyomi.domain.manga.interactor.GetFlatMetadataById
+import tachiyomi.domain.manga.interactor.GetManga
+import tachiyomi.domain.manga.interactor.NetworkToLocalManga
+import tachiyomi.domain.manga.model.Manga
+import tachiyomi.domain.manga.model.toMangaUpdate
+import tachiyomi.domain.source.interactor.DeleteSavedSearchById
+import tachiyomi.domain.source.interactor.GetRemoteManga
+import tachiyomi.domain.source.interactor.InsertSavedSearch
+import tachiyomi.domain.source.model.EXHSavedSearch
+import tachiyomi.domain.source.model.SavedSearch
+import tachiyomi.domain.source.repository.SourcePagingSourceType
+import tachiyomi.domain.source.service.SourceManager
+import tachiyomi.domain.track.interactor.InsertTrack
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import xyz.nulldev.ts.api.http.serializer.FilterSerializer
@@ -117,12 +100,12 @@ open class BrowseSourceScreenModel(
     private val libraryPreferences: LibraryPreferences = Injekt.get(),
     private val coverCache: CoverCache = Injekt.get(),
     private val getRemoteManga: GetRemoteManga = Injekt.get(),
-    private val getManga: GetManga = Injekt.get(),
     private val getDuplicateLibraryManga: GetDuplicateLibraryManga = Injekt.get(),
     private val getCategories: GetCategories = Injekt.get(),
     private val getChapterByMangaId: GetChapterByMangaId = Injekt.get(),
     private val setMangaCategories: SetMangaCategories = Injekt.get(),
     private val setMangaDefaultChapterFlags: SetMangaDefaultChapterFlags = Injekt.get(),
+    private val getManga: GetManga = Injekt.get(),
     private val networkToLocalManga: NetworkToLocalManga = Injekt.get(),
     private val updateManga: UpdateManga = Injekt.get(),
     private val insertTrack: InsertTrack = Injekt.get(),
@@ -130,6 +113,7 @@ open class BrowseSourceScreenModel(
 
     // SY -->
     unsortedPreferences: UnsortedPreferences = Injekt.get(),
+    uiPreferences: UiPreferences = Injekt.get(),
     private val getFlatMetadataById: GetFlatMetadataById = Injekt.get(),
     private val deleteSavedSearchById: DeleteSavedSearchById = Injekt.get(),
     private val insertSavedSearch: InsertSavedSearch = Injekt.get(),
@@ -141,29 +125,35 @@ open class BrowseSourceScreenModel(
 
     var displayMode by sourcePreferences.sourceDisplayMode().asState(coroutineScope)
 
-    val source = sourceManager.get(sourceId) as CatalogueSource
+    val source = sourceManager.getOrStub(sourceId)
 
     // SY -->
     val ehentaiBrowseDisplayMode by unsortedPreferences.enhancedEHentaiView().asState(coroutineScope)
 
+    val startExpanded by uiPreferences.expandFilters().asState(coroutineScope)
+
     private val filterSerializer = FilterSerializer()
+
+    val sourceIsMangaDex = sourceId in mangaDexSourceIds
     // SY <--
 
     init {
-        mutableState.update {
-            var query: String? = null
-            var listing = it.listing
+        if (source is CatalogueSource) {
+            mutableState.update {
+                var query: String? = null
+                var listing = it.listing
 
-            if (listing is Listing.Search) {
-                query = listing.query
-                listing = Listing.Search(query, source.getFilterList())
+                if (listing is Listing.Search) {
+                    query = listing.query
+                    listing = Listing.Search(query, source.getFilterList())
+                }
+
+                it.copy(
+                    listing = listing,
+                    filters = source.getFilterList(),
+                    toolbarQuery = query,
+                )
             }
-
-            it.copy(
-                listing = listing,
-                filters = source.getFilterList(),
-                toolbarQuery = query,
-            )
         }
 
         // SY -->
@@ -173,7 +163,7 @@ open class BrowseSourceScreenModel(
         if (savedSearchFilters != null) {
             val savedSearch = runBlocking { getExhSavedSearch.awaitOne(savedSearchFilters) { filters } }
             if (savedSearch != null) {
-                search(query = savedSearch.query.nullIfBlank(), filters = savedSearch.filterList)
+                search(query = savedSearch.query, filters = savedSearch.filterList)
             }
         } else if (jsonFilters != null) {
             runCatching {
@@ -183,21 +173,16 @@ open class BrowseSourceScreenModel(
             }
         }
 
-        getExhSavedSearch.subscribe(source.id, source::getFilterList)
-            .onEach { savedSearches ->
-                mutableState.update { it.copy(savedSearches = savedSearches) }
-                withUIContext {
-                    filterSheet?.setSavedSearches(savedSearches)
+        if (source is CatalogueSource) {
+            getExhSavedSearch.subscribe(source.id, source::getFilterList)
+                .map { it.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER, EXHSavedSearch::name)) }
+                .onEach { savedSearches ->
+                    mutableState.update { it.copy(savedSearches = savedSearches) }
                 }
-            }
-            .launchIn(coroutineScope)
+                .launchIn(coroutineScope)
+        }
         // SY <--
     }
-
-    /**
-     * Sheet containing filter items.
-     */
-    private var filterSheet: SourceFilterSheet? = null
 
     /**
      * Flow of Pager flow tied to [State.listing]
@@ -211,22 +196,25 @@ open class BrowseSourceScreenModel(
                 // SY -->
                 createSourcePagingSource(listing.query ?: "", listing.filters)
                 // SY <--
-            }.flow
-                .map { pagingData ->
-                    pagingData.map { (sManga, metadata) ->
-                        val dbManga = withIOContext { networkToLocalManga.await(sManga.toDomainManga(sourceId)) }
-                        getManga.subscribe(dbManga.url, dbManga.source)
-                            .filterNotNull()
-                            .onEach { initializeManga(it) }
-                            // SY -->
-                            .combineMetadata(dbManga, metadata)
-                            // SY <--
-                            .stateIn(coroutineScope)
-                    }
+            }.flow.map { pagingData ->
+                pagingData.map { (it, metadata) ->
+                    networkToLocalManga.await(it.toDomainManga(sourceId))
+                        .let { localManga ->
+                            getManga.subscribe(localManga.url, localManga.source)
+                        }
+                        .filterNotNull()
+                        .filter { localManga ->
+                            !sourcePreferences.hideInLibraryItems().get() || !localManga.favorite
+                        }
+                        // SY -->
+                        .combineMetadata(metadata)
+                        // SY <--
+                        .stateIn(ioCoroutineScope)
                 }
-                .cachedIn(coroutineScope)
+            }
+                .cachedIn(ioCoroutineScope)
         }
-        .stateIn(coroutineScope, SharingStarted.Lazily, emptyFlow())
+        .stateIn(ioCoroutineScope, SharingStarted.Lazily, emptyFlow())
 
     fun getColumnsPreference(orientation: Int): GridCells {
         val isLandscape = orientation == Configuration.ORIENTATION_LANDSCAPE
@@ -239,16 +227,24 @@ open class BrowseSourceScreenModel(
     }
 
     // SY -->
-    open fun Flow<Manga>.combineMetadata(dbManga: Manga, metadata: RaisedSearchMetadata?): Flow<Pair<Manga, RaisedSearchMetadata?>> {
+    open fun Flow<Manga>.combineMetadata(metadata: RaisedSearchMetadata?): Flow<Pair<Manga, RaisedSearchMetadata?>> {
         val metadataSource = source.getMainSource<MetadataSource<*, *>>()
-        return combine(getFlatMetadataById.subscribe(dbManga.id)) { manga, flatMetadata ->
-            metadataSource ?: return@combine manga to metadata
-            manga to (flatMetadata?.raise(metadataSource.metaClass) ?: metadata)
+        return flatMapLatest { manga ->
+            if (metadataSource != null) {
+                getFlatMetadataById.subscribe(manga.id)
+                    .map { flatMetadata ->
+                        manga to (flatMetadata?.raise(metadataSource.metaClass) ?: metadata)
+                    }
+            } else {
+                flowOf(manga to null)
+            }
         }
     }
     // SY <--
 
     fun resetFilters() {
+        if (source !is CatalogueSource) return
+
         mutableState.update { it.copy(filters = source.getFilterList()) }
     }
 
@@ -256,7 +252,18 @@ open class BrowseSourceScreenModel(
         mutableState.update { it.copy(listing = listing) }
     }
 
+    fun setFilters(filters: FilterList) {
+        if (source !is CatalogueSource) return
+
+        mutableState.update {
+            it.copy(
+                filters = filters,
+            )
+        }
+    }
+
     fun search(query: String? = null, filters: FilterList? = null) {
+        if (source !is CatalogueSource) return
         // SY -->
         if (filters != null && filters !== state.value.filters) {
             mutableState.update { state -> state.copy(filters = filters) }
@@ -277,6 +284,8 @@ open class BrowseSourceScreenModel(
     }
 
     fun searchGenre(genreName: String) {
+        if (source !is CatalogueSource) return
+
         val defaultFilters = source.getFilterList()
         var genreExists = false
 
@@ -320,26 +329,6 @@ open class BrowseSourceScreenModel(
     }
 
     /**
-     * Initialize a manga.
-     *
-     * @param manga to initialize.
-     */
-    private suspend fun initializeManga(manga: Manga) {
-        if (manga.thumbnailUrl != null || manga.initialized) return
-        withNonCancellableContext {
-            try {
-                val networkManga = source.getMangaDetails(manga.toSManga())
-                val updatedManga = manga.copyFrom(networkManga)
-                    .copy(initialized = true)
-
-                updateManga.await(updatedManga.toMangaUpdate())
-            } catch (e: Exception) {
-                logcat(LogPriority.ERROR, e)
-            }
-        }
-    }
-
-    /**
      * Adds or removes a manga from the library.
      *
      * @param manga the manga to update.
@@ -364,10 +353,6 @@ open class BrowseSourceScreenModel(
 
             updateManga.await(new.toMangaUpdate())
         }
-    }
-
-    fun getSourceOrStub(manga: Manga): Source {
-        return sourceManager.getOrStub(manga.source)
     }
 
     fun addFavorite(manga: Manga) {
@@ -435,14 +420,14 @@ open class BrowseSourceScreenModel(
         return getCategories.subscribe()
             .firstOrNull()
             ?.filterNot { it.isSystemCategory }
-            ?: emptyList()
+            .orEmpty()
     }
 
     suspend fun getDuplicateLibraryManga(manga: Manga): Manga? {
-        return getDuplicateLibraryManga.await(manga.title, manga.source)
+        return getDuplicateLibraryManga.await(manga.title)
     }
 
-    fun moveMangaToCategories(manga: Manga, vararg categories: Category) {
+    private fun moveMangaToCategories(manga: Manga, vararg categories: Category) {
         moveMangaToCategories(manga, categories.filter { it.id != 0L }.map { it.id })
     }
 
@@ -456,7 +441,7 @@ open class BrowseSourceScreenModel(
     }
 
     fun openFilterSheet() {
-        filterSheet?.show()
+        setDialog(Dialog.Filter)
     }
 
     fun setDialog(dialog: Dialog?) {
@@ -465,65 +450,6 @@ open class BrowseSourceScreenModel(
 
     fun setToolbarQuery(query: String?) {
         mutableState.update { it.copy(toolbarQuery = query) }
-    }
-
-    open fun initFilterSheet(context: Context, navigator: Navigator) {
-        val state = state.value
-        /*if (state.filters.isEmpty()) {
-            return
-        }*/
-
-        filterSheet = SourceFilterSheet(
-            context = context,
-            // SY -->
-            navigator = navigator,
-            source = source,
-            searches = state.savedSearches,
-            // SY <--
-            onFilterClicked = { search(filters = state.filters) },
-            onResetClicked = {
-                resetFilters()
-                filterSheet?.setFilters(state.filterItems)
-            },
-            // EXH -->
-            onSaveClicked = {
-                coroutineScope.launchIO {
-                    val names = loadSearches().map { it.name }
-                    mutableState.update { it.copy(dialog = Dialog.CreateSavedSearch(names)) }
-                }
-            },
-            onSavedSearchClicked = { idOfSearch ->
-                coroutineScope.launchIO {
-                    val search = loadSearch(idOfSearch)
-
-                    if (search == null) {
-                        mutableState.update { it.copy(dialog = Dialog.FailedToLoadSavedSearch) }
-                        return@launchIO
-                    }
-
-                    if (search.filterList == null && state.filters.isNotEmpty()) {
-                        withUIContext {
-                            context.toast(R.string.save_search_invalid)
-                        }
-                        return@launchIO
-                    }
-
-                    val allDefault = search.filterList != null && state.filters == source.getFilterList()
-                    filterSheet?.dismiss()
-
-                    search(
-                        query = search.query,
-                        filters = if (allDefault) null else search.filterList,
-                    )
-                }
-            },
-            onSavedSearchDeleteClicked = { idToDelete, name ->
-                mutableState.update { it.copy(dialog = Dialog.DeleteSavedSearch(idToDelete, name)) }
-            },
-            // EXH <--
-        )
-
-        filterSheet?.setFilters(state.filterItems)
     }
 
     sealed class Listing(open val query: String?, open val filters: FilterList) {
@@ -543,6 +469,7 @@ open class BrowseSourceScreenModel(
     }
 
     sealed class Dialog {
+        object Filter : Dialog()
         data class RemoveManga(val manga: Manga) : Dialog()
         data class AddDuplicateManga(val manga: Manga, val duplicate: Manga) : Dialog()
         data class ChangeMangaCategory(
@@ -552,7 +479,6 @@ open class BrowseSourceScreenModel(
         data class Migrate(val newManga: Manga) : Dialog()
 
         // SY -->
-        object FailedToLoadSavedSearch : Dialog()
         data class DeleteSavedSearch(val idToDelete: Long, val name: String) : Dialog()
         data class CreateSavedSearch(val currentSavedSearches: List<String>) : Dialog()
         // SY <--
@@ -566,25 +492,73 @@ open class BrowseSourceScreenModel(
         val dialog: Dialog? = null,
         // SY -->
         val savedSearches: List<EXHSavedSearch> = emptyList(),
+        val filterable: Boolean = true,
         // SY <--
     ) {
-        val filterItems get() = filters.toItems()
         val isUserQuery get() = listing is Listing.Search && !listing.query.isNullOrEmpty()
     }
 
     // EXH -->
+    fun onSaveSearch() {
+        coroutineScope.launchIO {
+            val names = state.value.savedSearches.map { it.name }
+            mutableState.update { it.copy(dialog = Dialog.CreateSavedSearch(names)) }
+        }
+    }
+
+    fun onSavedSearch(
+        search: EXHSavedSearch,
+        onToast: (Int) -> Unit,
+    ) {
+        coroutineScope.launchIO {
+            if (source !is CatalogueSource) return@launchIO
+
+            if (search.filterList == null && state.value.filters.isNotEmpty()) {
+                withUIContext {
+                    onToast(R.string.save_search_invalid)
+                }
+                return@launchIO
+            }
+
+            val allDefault = search.filterList != null && search.filterList == source.getFilterList()
+            setDialog(null)
+
+            val filters = search.filterList
+                ?.takeUnless { allDefault }
+                ?: source.getFilterList()
+
+            mutableState.update {
+                it.copy(
+                    listing = Listing.Search(
+                        query = search.query,
+                        filters = filters,
+                    ),
+                    filters = filters,
+                    toolbarQuery = search.query,
+                )
+            }
+        }
+    }
+
+    fun onSavedSearchPress(search: EXHSavedSearch) {
+        mutableState.update { it.copy(dialog = Dialog.DeleteSavedSearch(search.id, search.name)) }
+    }
+
     fun saveSearch(
         name: String,
     ) {
+        if (source !is CatalogueSource) return
         coroutineScope.launchNonCancellable {
-            val query = state.value.listing.query
-            val filterList = state.value.listing.filters.ifEmpty { source.getFilterList() }
+            val query = state.value.toolbarQuery?.takeUnless {
+                it.isBlank() || it == GetRemoteManga.QUERY_POPULAR || it == GetRemoteManga.QUERY_LATEST
+            }?.trim()
+            val filterList = state.value.filters.ifEmpty { source.getFilterList() }
             insertSavedSearch.await(
                 SavedSearch(
                     id = -1,
                     source = source.id,
                     name = name.trim(),
-                    query = query?.nullIfBlank(),
+                    query = query,
                     filtersJson = runCatching { filterSerializer.serialize(filterList).ifEmpty { null }?.let { Json.encodeToString(it) } }.getOrNull(),
                 ),
             )
@@ -597,52 +571,12 @@ open class BrowseSourceScreenModel(
         }
     }
 
-    suspend fun loadSearch(searchId: Long) =
-        getExhSavedSearch.awaitOne(searchId, source::getFilterList)
-
-    suspend fun loadSearches() =
-        getExhSavedSearch.await(source.id, source::getFilterList)
-    // EXH <--
-}
-
-fun FilterList.toItems(): List<IFlexible<*>> {
-    return mapNotNull { filter ->
-        when (filter) {
-            // --> EXH
-            is SourceModelFilter.AutoComplete -> AutoComplete(filter)
-            // <-- EXH
-            is SourceModelFilter.Header -> HeaderItem(filter)
-            is SourceModelFilter.Separator -> SeparatorItem(filter)
-            is SourceModelFilter.CheckBox -> CheckboxItem(filter)
-            is SourceModelFilter.TriState -> TriStateItem(filter)
-            is SourceModelFilter.Text -> TextItem(filter)
-            is SourceModelFilter.Select<*> -> SelectItem(filter)
-            is SourceModelFilter.Group<*> -> {
-                val group = GroupItem(filter)
-                val subItems = filter.state.mapNotNull {
-                    when (it) {
-                        is SourceModelFilter.CheckBox -> CheckboxSectionItem(it)
-                        is SourceModelFilter.TriState -> TriStateSectionItem(it)
-                        is SourceModelFilter.Text -> TextSectionItem(it)
-                        is SourceModelFilter.Select<*> -> SelectSectionItem(it)
-                        // SY -->
-                        is SourceModelFilter.AutoComplete -> AutoCompleteSectionItem(it)
-                        // SY <--
-                        else -> null
-                    }
-                }
-                subItems.forEach { it.header = group }
-                group.subItems = subItems
-                group
-            }
-            is SourceModelFilter.Sort -> {
-                val group = SortGroup(filter)
-                val subItems = filter.values.map {
-                    SortItem(it, group)
-                }
-                group.subItems = subItems
-                group
-            }
+    fun onMangaDexRandom(onRandomFound: (String) -> Unit) {
+        coroutineScope.launchIO {
+            val random = source.getMainSource<MangaDex>()?.fetchRandomMangaUrl()
+                ?: return@launchIO
+            onRandomFound(random)
         }
     }
+    // EXH <--
 }

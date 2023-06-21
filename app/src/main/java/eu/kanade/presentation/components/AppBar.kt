@@ -17,13 +17,13 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.PlainTooltipBox
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -44,9 +44,13 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import eu.kanade.presentation.util.runOnEnterKeyPressed
-import eu.kanade.presentation.util.secondaryItemAlpha
 import eu.kanade.tachiyomi.R
+import tachiyomi.presentation.core.util.clearFocusOnSoftKeyboardHide
+import tachiyomi.presentation.core.util.runOnEnterKeyPressed
+import tachiyomi.presentation.core.util.secondaryItemAlpha
+import tachiyomi.presentation.core.util.showSoftKeyboard
+
+const val SEARCH_DEBOUNCE_MILLIS = 250L
 
 @Composable
 fun AppBar(
@@ -135,7 +139,7 @@ fun AppBar(
             },
             title = titleContent,
             actions = actions,
-            colors = TopAppBarDefaults.smallTopAppBarColors(
+            colors = TopAppBarDefaults.topAppBarColors(
                 containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(
                     elevation = if (isActionMode) 3.dp else 0.dp,
                 ),
@@ -176,21 +180,36 @@ fun AppBarActions(
     var showMenu by remember { mutableStateOf(false) }
 
     actions.filterIsInstance<AppBar.Action>().map {
-        IconButton(
-            onClick = it.onClick,
-            enabled = it.enabled,
+        PlainTooltipBox(
+            tooltip = { Text(it.title) },
         ) {
-            Icon(
-                imageVector = it.icon,
-                contentDescription = it.title,
-            )
+            IconButton(
+                onClick = it.onClick,
+                enabled = it.enabled,
+                modifier = Modifier.tooltipAnchor(),
+            ) {
+                Icon(
+                    imageVector = it.icon,
+                    contentDescription = it.title,
+                )
+            }
         }
     }
 
     val overflowActions = actions.filterIsInstance<AppBar.OverflowAction>()
     if (overflowActions.isNotEmpty()) {
-        IconButton(onClick = { showMenu = !showMenu }) {
-            Icon(Icons.Outlined.MoreVert, contentDescription = stringResource(R.string.abc_action_menu_overflow_description))
+        PlainTooltipBox(
+            tooltip = { Text(stringResource(R.string.abc_action_menu_overflow_description)) },
+        ) {
+            IconButton(
+                onClick = { showMenu = !showMenu },
+                modifier = Modifier.tooltipAnchor(),
+            ) {
+                Icon(
+                    Icons.Outlined.MoreVert,
+                    contentDescription = stringResource(R.string.abc_action_menu_overflow_description),
+                )
+            }
         }
 
         DropdownMenu(
@@ -231,7 +250,6 @@ fun SearchToolbar(
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
 ) {
     val focusRequester = remember { FocusRequester() }
-    var searchClickCount by remember { mutableStateOf(0) }
 
     AppBar(
         titleContent = {
@@ -253,7 +271,9 @@ fun SearchToolbar(
                 modifier = Modifier
                     .fillMaxWidth()
                     .focusRequester(focusRequester)
-                    .runOnEnterKeyPressed(action = searchAndClearFocus),
+                    .runOnEnterKeyPressed(action = searchAndClearFocus)
+                    .showSoftKeyboard(remember { searchQuery.isEmpty() })
+                    .clearFocusOnSoftKeyboardHide(),
                 textStyle = MaterialTheme.typography.titleMedium.copy(
                     color = MaterialTheme.colorScheme.onBackground,
                     fontWeight = FontWeight.Normal,
@@ -274,18 +294,16 @@ fun SearchToolbar(
                         visualTransformation = visualTransformation,
                         interactionSource = interactionSource,
                         placeholder = {
-                            (placeholderText ?: stringResource(R.string.action_search_hint)).let { placeholderText ->
-                                Text(
-                                    modifier = Modifier.secondaryItemAlpha(),
-                                    text = placeholderText,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    style = MaterialTheme.typography.titleMedium.copy(
-                                        fontSize = 18.sp,
-                                        fontWeight = FontWeight.Normal,
-                                    ),
-                                )
-                            }
+                            Text(
+                                modifier = Modifier.secondaryItemAlpha(),
+                                text = (placeholderText ?: stringResource(R.string.action_search_hint)),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Normal,
+                                ),
+                            )
                         },
                     )
                 },
@@ -294,20 +312,40 @@ fun SearchToolbar(
         navigateUp = if (searchQuery == null) navigateUp else onClickCloseSearch,
         actions = {
             key("search") {
-                val onClick = {
-                    searchClickCount++
-                    onChangeSearchQuery("")
-                }
+                val onClick = { onChangeSearchQuery("") }
 
                 if (!searchEnabled) {
                     // Don't show search action
                 } else if (searchQuery == null) {
-                    IconButton(onClick) {
-                        Icon(Icons.Outlined.Search, contentDescription = stringResource(R.string.action_search))
+                    PlainTooltipBox(
+                        tooltip = { Text(stringResource(R.string.action_search)) },
+                    ) {
+                        IconButton(
+                            onClick = onClick,
+                            modifier = Modifier.tooltipAnchor(),
+                        ) {
+                            Icon(
+                                Icons.Outlined.Search,
+                                contentDescription = stringResource(R.string.action_search),
+                            )
+                        }
                     }
                 } else if (searchQuery.isNotEmpty()) {
-                    IconButton(onClick) {
-                        Icon(Icons.Outlined.Close, contentDescription = stringResource(R.string.action_reset))
+                    PlainTooltipBox(
+                        tooltip = { Text(stringResource(R.string.action_reset)) },
+                    ) {
+                        IconButton(
+                            onClick = {
+                                onClick()
+                                focusRequester.requestFocus()
+                            },
+                            modifier = Modifier.tooltipAnchor(),
+                        ) {
+                            Icon(
+                                Icons.Outlined.Close,
+                                contentDescription = stringResource(R.string.action_reset),
+                            )
+                        }
                     }
                 }
             }
@@ -317,15 +355,6 @@ fun SearchToolbar(
         isActionMode = false,
         scrollBehavior = scrollBehavior,
     )
-    LaunchedEffect(searchClickCount) {
-        if (searchQuery == null) return@LaunchedEffect
-        if (searchClickCount == 0 && searchQuery.isNotEmpty()) return@LaunchedEffect
-        try {
-            focusRequester.requestFocus()
-        } catch (_: Throwable) {
-            // TextField is gone
-        }
-    }
 }
 
 sealed interface AppBar {

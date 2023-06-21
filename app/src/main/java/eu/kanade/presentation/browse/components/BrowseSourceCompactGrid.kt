@@ -15,17 +15,16 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
-import eu.kanade.domain.manga.model.Manga
-import eu.kanade.domain.manga.model.MangaCover
-import eu.kanade.presentation.browse.InLibraryBadge
-import eu.kanade.presentation.components.Badge
-import eu.kanade.presentation.components.CommonMangaItemDefaults
-import eu.kanade.presentation.components.MangaCompactGridItem
-import eu.kanade.presentation.util.plus
+import eu.kanade.presentation.library.components.CommonMangaItemDefaults
+import eu.kanade.presentation.library.components.MangaCompactGridItem
 import eu.kanade.tachiyomi.R
 import exh.metadata.metadata.MangaDexSearchMetadata
 import exh.metadata.metadata.base.RaisedSearchMetadata
 import kotlinx.coroutines.flow.StateFlow
+import tachiyomi.domain.manga.model.Manga
+import tachiyomi.domain.manga.model.MangaCover
+import tachiyomi.presentation.core.components.Badge
+import tachiyomi.presentation.core.util.plus
 
 @Composable
 fun BrowseSourceCompactGrid(
@@ -47,12 +46,13 @@ fun BrowseSourceCompactGrid(
             }
         }
 
-        items(mangaList.itemCount) { index ->
+        items(count = mangaList.itemCount) { index ->
             // SY -->
             val pair by mangaList[index]?.collectAsState() ?: return@items
             val manga = pair.first
             val metadata = pair.second
             // SY <--
+
             BrowseSourceCompactGridItem(
                 manga = manga,
                 // SY -->

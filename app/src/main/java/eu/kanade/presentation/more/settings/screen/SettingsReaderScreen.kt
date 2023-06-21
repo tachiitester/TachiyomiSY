@@ -12,8 +12,6 @@ import androidx.compose.ui.res.stringResource
 import eu.kanade.presentation.more.settings.Preference
 import eu.kanade.presentation.util.collectAsState
 import eu.kanade.tachiyomi.R
-import eu.kanade.tachiyomi.data.preference.PreferenceValues.ReaderHideThreshold
-import eu.kanade.tachiyomi.data.preference.PreferenceValues.TappingInvertMode
 import eu.kanade.tachiyomi.ui.reader.setting.OrientationType
 import eu.kanade.tachiyomi.ui.reader.setting.ReaderBottomButton
 import eu.kanade.tachiyomi.ui.reader.setting.ReaderPreferences
@@ -169,6 +167,10 @@ object SettingsReaderScreen : SearchableSettings {
                     title = stringResource(R.string.pref_skip_filtered_chapters),
                 ),
                 Preference.PreferenceItem.SwitchPreference(
+                    pref = readerPreferences.skipDupe(),
+                    title = stringResource(R.string.pref_skip_dupe_chapters),
+                ),
+                Preference.PreferenceItem.SwitchPreference(
                     pref = readerPreferences.alwaysShowChapterTransition(),
                     title = stringResource(R.string.pref_always_show_chapter_transition),
                 ),
@@ -181,10 +183,12 @@ object SettingsReaderScreen : SearchableSettings {
         val navModePref = readerPreferences.navigationModePager()
         val imageScaleTypePref = readerPreferences.imageScaleType()
         val dualPageSplitPref = readerPreferences.dualPageSplitPaged()
+        val rotateToFitPref = readerPreferences.dualPageRotateToFit()
 
         val navMode by navModePref.collectAsState()
         val imageScaleType by imageScaleTypePref.collectAsState()
         val dualPageSplit by dualPageSplitPref.collectAsState()
+        val rotateToFit by rotateToFitPref.collectAsState()
 
         return Preference.PreferenceGroup(
             title = stringResource(R.string.pager_viewer),
@@ -200,16 +204,11 @@ object SettingsReaderScreen : SearchableSettings {
                     pref = readerPreferences.pagerNavInverted(),
                     title = stringResource(R.string.pref_read_with_tapping_inverted),
                     entries = mapOf(
-                        TappingInvertMode.NONE to stringResource(R.string.none),
-                        TappingInvertMode.HORIZONTAL to stringResource(R.string.tapping_inverted_horizontal),
-                        TappingInvertMode.VERTICAL to stringResource(R.string.tapping_inverted_vertical),
-                        TappingInvertMode.BOTH to stringResource(R.string.tapping_inverted_both),
+                        ReaderPreferences.TappingInvertMode.NONE to stringResource(R.string.none),
+                        ReaderPreferences.TappingInvertMode.HORIZONTAL to stringResource(R.string.tapping_inverted_horizontal),
+                        ReaderPreferences.TappingInvertMode.VERTICAL to stringResource(R.string.tapping_inverted_vertical),
+                        ReaderPreferences.TappingInvertMode.BOTH to stringResource(R.string.tapping_inverted_both),
                     ),
-                    enabled = navMode != 5,
-                ),
-                Preference.PreferenceItem.SwitchPreference(
-                    pref = readerPreferences.navigateToPan(),
-                    title = stringResource(R.string.pref_navigate_pan),
                     enabled = navMode != 5,
                 ),
                 Preference.PreferenceItem.ListPreference(
@@ -251,14 +250,36 @@ object SettingsReaderScreen : SearchableSettings {
                 ),
                 // SY <--
                 Preference.PreferenceItem.SwitchPreference(
+                    pref = readerPreferences.navigateToPan(),
+                    title = stringResource(R.string.pref_navigate_pan),
+                    enabled = navMode != 5,
+                ),
+                Preference.PreferenceItem.SwitchPreference(
                     pref = dualPageSplitPref,
                     title = stringResource(R.string.pref_dual_page_split),
+                    onValueChanged = {
+                        rotateToFitPref.set(false)
+                        true
+                    },
                 ),
                 Preference.PreferenceItem.SwitchPreference(
                     pref = readerPreferences.dualPageInvertPaged(),
                     title = stringResource(R.string.pref_dual_page_invert),
                     subtitle = stringResource(R.string.pref_dual_page_invert_summary),
                     enabled = dualPageSplit,
+                ),
+                Preference.PreferenceItem.SwitchPreference(
+                    pref = rotateToFitPref,
+                    title = stringResource(R.string.pref_page_rotate),
+                    onValueChanged = {
+                        dualPageSplitPref.set(false)
+                        true
+                    },
+                ),
+                Preference.PreferenceItem.SwitchPreference(
+                    pref = readerPreferences.dualPageRotateToFitInvert(),
+                    title = stringResource(R.string.pref_page_rotate_invert),
+                    enabled = rotateToFit,
                 ),
             ),
         )
@@ -286,10 +307,10 @@ object SettingsReaderScreen : SearchableSettings {
                     pref = readerPreferences.webtoonNavInverted(),
                     title = stringResource(R.string.pref_read_with_tapping_inverted),
                     entries = mapOf(
-                        TappingInvertMode.NONE to stringResource(R.string.none),
-                        TappingInvertMode.HORIZONTAL to stringResource(R.string.tapping_inverted_horizontal),
-                        TappingInvertMode.VERTICAL to stringResource(R.string.tapping_inverted_vertical),
-                        TappingInvertMode.BOTH to stringResource(R.string.tapping_inverted_both),
+                        ReaderPreferences.TappingInvertMode.NONE to stringResource(R.string.none),
+                        ReaderPreferences.TappingInvertMode.HORIZONTAL to stringResource(R.string.tapping_inverted_horizontal),
+                        ReaderPreferences.TappingInvertMode.VERTICAL to stringResource(R.string.tapping_inverted_vertical),
+                        ReaderPreferences.TappingInvertMode.BOTH to stringResource(R.string.tapping_inverted_both),
                     ),
                     enabled = navMode != 5,
                 ),
@@ -309,10 +330,10 @@ object SettingsReaderScreen : SearchableSettings {
                     pref = readerPreferences.readerHideThreshold(),
                     title = stringResource(R.string.pref_hide_threshold),
                     entries = mapOf(
-                        ReaderHideThreshold.HIGHEST to stringResource(R.string.pref_highest),
-                        ReaderHideThreshold.HIGH to stringResource(R.string.pref_high),
-                        ReaderHideThreshold.LOW to stringResource(R.string.pref_low),
-                        ReaderHideThreshold.LOWEST to stringResource(R.string.pref_lowest),
+                        ReaderPreferences.ReaderHideThreshold.HIGHEST to stringResource(R.string.pref_highest),
+                        ReaderPreferences.ReaderHideThreshold.HIGH to stringResource(R.string.pref_high),
+                        ReaderPreferences.ReaderHideThreshold.LOW to stringResource(R.string.pref_low),
+                        ReaderPreferences.ReaderHideThreshold.LOWEST to stringResource(R.string.pref_lowest),
                     ),
                 ),
                 Preference.PreferenceItem.SwitchPreference(
@@ -334,6 +355,11 @@ object SettingsReaderScreen : SearchableSettings {
                     title = stringResource(R.string.pref_long_strip_split),
                     subtitle = stringResource(R.string.split_tall_images_summary),
                     enabled = !isReleaseBuildType, // TODO: Show in release build when the feature is stable
+                ),
+                Preference.PreferenceItem.SwitchPreference(
+                    pref = readerPreferences.webtoonDoubleTapZoomEnabled(),
+                    title = stringResource(R.string.pref_double_tap_zoom),
+                    enabled = true,
                 ),
                 // SY -->
                 Preference.PreferenceItem.SwitchPreference(
@@ -518,6 +544,11 @@ object SettingsReaderScreen : SearchableSettings {
                         2 to stringResource(R.string.center_margin_wide_page),
                         3 to stringResource(R.string.center_margin_double_and_wide_page),
                     ),
+                ),
+                Preference.PreferenceItem.SwitchPreference(
+                    pref = readerPreferences.cacheArchiveMangaOnDisk(),
+                    title = stringResource(R.string.cache_archived_manga_to_disk),
+                    subtitle = stringResource(R.string.cache_archived_manga_to_disk_subtitle),
                 ),
             ),
         )

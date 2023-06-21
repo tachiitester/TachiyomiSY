@@ -10,13 +10,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import eu.kanade.presentation.theme.TachiyomiTheme
-import eu.kanade.presentation.util.ThemePreviews
+import tachiyomi.presentation.core.util.ThemePreviews
 
 @Composable
 fun SwitchPreferenceWidget(
     modifier: Modifier = Modifier,
     title: String,
-    subtitle: String? = null,
+    subtitle: CharSequence? = null,
     icon: ImageVector? = null,
     checked: Boolean = false,
     onCheckedChanged: (Boolean) -> Unit,

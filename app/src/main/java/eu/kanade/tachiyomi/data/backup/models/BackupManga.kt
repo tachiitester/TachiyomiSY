@@ -1,15 +1,14 @@
 package eu.kanade.tachiyomi.data.backup.models
 
-import eu.kanade.data.listOfStringsAndAdapter
-import eu.kanade.domain.manga.model.Manga
-import eu.kanade.tachiyomi.data.database.models.ChapterImpl
-import eu.kanade.tachiyomi.data.database.models.MangaImpl
-import eu.kanade.tachiyomi.data.database.models.TrackImpl
-import eu.kanade.tachiyomi.data.library.CustomMangaManager
 import eu.kanade.tachiyomi.source.model.UpdateStrategy
 import eu.kanade.tachiyomi.ui.reader.setting.ReadingModeType
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.protobuf.ProtoNumber
+import tachiyomi.data.listOfStringsAndAdapter
+import tachiyomi.domain.chapter.model.Chapter
+import tachiyomi.domain.manga.model.CustomMangaInfo
+import tachiyomi.domain.manga.model.Manga
+import tachiyomi.domain.track.model.Track
 
 @Suppress("DEPRECATION")
 @Serializable
@@ -59,34 +58,36 @@ data class BackupManga(
     // Neko specific values
     @ProtoNumber(901) var filtered_scanlators: String? = null,
 ) {
-    fun getMangaImpl(): MangaImpl {
-        return MangaImpl().apply {
-            url = this@BackupManga.url
-            title = this@BackupManga.title
-            artist = this@BackupManga.artist
-            author = this@BackupManga.author
-            description = this@BackupManga.description
-            genre = this@BackupManga.genre.joinToString()
-            status = this@BackupManga.status
-            thumbnail_url = this@BackupManga.thumbnailUrl
-            favorite = this@BackupManga.favorite
-            source = this@BackupManga.source
-            date_added = this@BackupManga.dateAdded
-            viewer_flags = this@BackupManga.viewer_flags ?: this@BackupManga.viewer
-            chapter_flags = this@BackupManga.chapterFlags
-            update_strategy = this@BackupManga.updateStrategy
-            filtered_scanlators = this@BackupManga.filtered_scanlators
-        }
+    fun getMangaImpl(): Manga {
+        return Manga.create().copy(
+            url = this@BackupManga.url,
+            // SY -->
+            ogTitle = this@BackupManga.title,
+            ogArtist = this@BackupManga.artist,
+            ogAuthor = this@BackupManga.author,
+            ogDescription = this@BackupManga.description,
+            ogGenre = this@BackupManga.genre,
+            ogStatus = this@BackupManga.status.toLong(),
+            // SY <--
+            thumbnailUrl = this@BackupManga.thumbnailUrl,
+            favorite = this@BackupManga.favorite,
+            source = this@BackupManga.source,
+            dateAdded = this@BackupManga.dateAdded,
+            viewerFlags = (this@BackupManga.viewer_flags ?: this@BackupManga.viewer).toLong(),
+            chapterFlags = this@BackupManga.chapterFlags.toLong(),
+            updateStrategy = this@BackupManga.updateStrategy,
+            filteredScanlators = this@BackupManga.filtered_scanlators?.let(listOfStringsAndAdapter::decode),
+        )
     }
 
-    fun getChaptersImpl(): List<ChapterImpl> {
+    fun getChaptersImpl(): List<Chapter> {
         return chapters.map {
             it.toChapterImpl()
         }
     }
 
     // SY -->
-    fun getCustomMangaInfo(): CustomMangaManager.MangaJson? {
+    fun getCustomMangaInfo(): CustomMangaInfo? {
         if (customTitle != null ||
             customArtist != null ||
             customAuthor != null ||
@@ -94,7 +95,7 @@ data class BackupManga(
             customGenre != null ||
             customStatus != 0
         ) {
-            return CustomMangaManager.MangaJson(
+            return CustomMangaInfo(
                 id = 0L,
                 title = customTitle,
                 author = customAuthor,
@@ -108,14 +109,14 @@ data class BackupManga(
     }
     // SY <--
 
-    fun getTrackingImpl(): List<TrackImpl> {
+    fun getTrackingImpl(): List<Track> {
         return tracking.map {
             it.getTrackingImpl()
         }
     }
 
     companion object {
-        fun copyFrom(manga: Manga /* SY --> */, customMangaManager: CustomMangaManager?/* SY <-- */): BackupManga {
+        fun copyFrom(manga: Manga /* SY --> */, customMangaInfo: CustomMangaInfo?/* SY <-- */): BackupManga {
             return BackupManga(
                 url = manga.url,
                 // SY -->
@@ -123,7 +124,7 @@ data class BackupManga(
                 artist = manga.ogArtist,
                 author = manga.ogAuthor,
                 description = manga.ogDescription,
-                genre = manga.ogGenre ?: emptyList(),
+                genre = manga.ogGenre.orEmpty(),
                 status = manga.ogStatus.toInt(),
                 // SY <--
                 thumbnailUrl = manga.thumbnailUrl,
@@ -137,7 +138,7 @@ data class BackupManga(
                 // SY -->
                 filtered_scanlators = manga.filteredScanlators?.let(listOfStringsAndAdapter::encode),
             ).also { backupManga ->
-                customMangaManager?.getManga(manga.id)?.let {
+                customMangaInfo?.let {
                     backupManga.customTitle = it.title
                     backupManga.customArtist = it.artist
                     backupManga.customAuthor = it.author

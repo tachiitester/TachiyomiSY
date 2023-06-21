@@ -5,10 +5,10 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.core.net.toUri
-import eu.kanade.domain.UnsortedPreferences
 import eu.kanade.tachiyomi.network.GET
 import eu.kanade.tachiyomi.network.asObservableSuccess
 import eu.kanade.tachiyomi.network.await
+import eu.kanade.tachiyomi.network.awaitSuccess
 import eu.kanade.tachiyomi.network.newCachelessCallWithProgress
 import eu.kanade.tachiyomi.source.PagePreviewInfo
 import eu.kanade.tachiyomi.source.PagePreviewPage
@@ -26,8 +26,6 @@ import eu.kanade.tachiyomi.source.online.MetadataSource
 import eu.kanade.tachiyomi.source.online.NamespaceSource
 import eu.kanade.tachiyomi.source.online.UrlImportableSource
 import eu.kanade.tachiyomi.util.asJsoup
-import eu.kanade.tachiyomi.util.lang.runAsObservable
-import eu.kanade.tachiyomi.util.lang.withIOContext
 import exh.debug.DebugToggles
 import exh.eh.EHTags
 import exh.eh.EHentaiUpdateHelper
@@ -50,7 +48,6 @@ import exh.ui.login.EhLoginActivity
 import exh.util.UriFilter
 import exh.util.UriGroup
 import exh.util.asObservableWithAsyncStacktrace
-import exh.util.awaitResponse
 import exh.util.dropBlank
 import exh.util.ignore
 import exh.util.nullIfBlank
@@ -85,6 +82,9 @@ import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
 import org.jsoup.nodes.TextNode
 import rx.Observable
+import tachiyomi.core.util.lang.runAsObservable
+import tachiyomi.core.util.lang.withIOContext
+import tachiyomi.domain.UnsortedPreferences
 import uy.kohesive.injekt.injectLazy
 import java.io.ByteArrayOutputStream
 import java.io.IOException
@@ -339,7 +339,7 @@ class EHentai(
             )
             if (cachedParent == null) {
                 throttleFunc()
-                doc = client.newCall(exGet(baseUrl + url)).await().asJsoup()
+                doc = client.newCall(exGet(baseUrl + url)).awaitSuccess().asJsoup()
 
                 val parentLink = doc.select("#gdd .gdt1").find { el ->
                     el.text().lowercase() == "parent:"
@@ -415,13 +415,6 @@ class EHentai(
                 Page(i, s)
             }
         }!!
-        .doOnNext { pages ->
-            if (pages.any { it.url == "https://$domain/img/509.gif" }) {
-                throw Exception(
-                    "Hit page limit",
-                )
-            }
-        }
 
     private fun fetchChapterPage(
         chapter: SChapter,
@@ -612,7 +605,7 @@ class EHentai(
 
     override suspend fun getMangaDetails(manga: SManga): SManga {
         val exception = Exception("Async stacktrace")
-        val response = client.newCall(mangaDetailsRequest(manga)).awaitResponse()
+        val response = client.newCall(mangaDetailsRequest(manga)).await()
         if (response.isSuccessful) {
             // Pull to most recent
             val doc = response.asJsoup()
@@ -621,7 +614,7 @@ class EHentai(
                 val sManga = manga.copy(
                     url = EHentaiSearchMetadata.normalizeUrl(newerGallery.attr("href")),
                 )
-                client.newCall(mangaDetailsRequest(sManga)).await().asJsoup()
+                client.newCall(mangaDetailsRequest(sManga)).awaitSuccess().asJsoup()
             } else {
                 doc
             }
@@ -641,6 +634,8 @@ class EHentai(
      * Parse gallery page to metadata model
      */
     override fun mangaDetailsParse(response: Response) = throw UnsupportedOperationException()
+
+    override fun newMetaInstance() = EHentaiSearchMetadata()
 
     override suspend fun parseIntoMetadata(metadata: EHentaiSearchMetadata, input: Document) {
         with(metadata) {
@@ -767,6 +762,9 @@ class EHentai(
             select("#loadfail").attr("onclick").nullIfBlank()?.let {
                 page.url = addParam(page.url, "nl", it.substring(it.indexOf('\'') + 1 until it.lastIndexOf('\'')))
             }
+            if (currentImage == "https://ehgt.org/g/509.gif") {
+                throw Exception("Exceeded page quota")
+            }
             return currentImage
         }
     }
@@ -790,7 +788,7 @@ class EHentai(
                         next = page,
                         cacheControl = CacheControl.FORCE_NETWORK,
                     ),
-                ).awaitResponse()
+                ).await()
             }
             val doc = response2.asJsoup()
 
@@ -1142,7 +1140,7 @@ class EHentai(
                     .build()
                     .toString(),
             ),
-        ).await().asJsoup()
+        ).awaitSuccess().asJsoup()
         val previews = if (doc.selectFirst("div#gdo4 .ths")!!.attr("onClick").contains("inline_set=ts_l")) {
             doc.body()
                 .select("#gdt div a")
@@ -1169,7 +1167,7 @@ class EHentai(
     }
 
     override suspend fun fetchPreviewImage(page: PagePreviewInfo, cacheControl: CacheControl?): Response {
-        return client.newCachelessCallWithProgress(exGet(page.imageUrl, cacheControl = cacheControl), page).await()
+        return client.newCachelessCallWithProgress(exGet(page.imageUrl, cacheControl = cacheControl), page).awaitSuccess()
     }
 
     /**

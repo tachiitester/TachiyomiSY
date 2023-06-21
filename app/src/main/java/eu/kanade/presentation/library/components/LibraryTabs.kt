@@ -1,33 +1,33 @@
 package eu.kanade.presentation.library.components
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
-import eu.kanade.domain.category.model.Category
 import eu.kanade.presentation.category.visualName
-import eu.kanade.presentation.components.Divider
-import eu.kanade.presentation.components.TabIndicator
-import eu.kanade.presentation.components.TabText
+import tachiyomi.domain.category.model.Category
+import tachiyomi.presentation.core.components.material.Divider
+import tachiyomi.presentation.core.components.material.TabIndicator
+import tachiyomi.presentation.core.components.material.TabText
 
 @Composable
-fun LibraryTabs(
+internal fun LibraryTabs(
     categories: List<Category>,
-    currentPageIndex: Int,
+    pagerState: PagerState,
     getNumberOfMangaForCategory: (Category) -> Int?,
     onTabItemClick: (Int) -> Unit,
 ) {
     // SY -->
-    @Suppress("NAME_SHADOWING")
-    val currentPageIndex = currentPageIndex.coerceAtMost(categories.lastIndex)
+    val currentPageIndex = pagerState.currentPage.coerceAtMost(categories.lastIndex)
     // SY <--
     Column {
         ScrollableTabRow(
             selectedTabIndex = currentPageIndex,
             edgePadding = 0.dp,
-            indicator = { TabIndicator(it[currentPageIndex.coerceAtMost(categories.lastIndex)]) },
+            indicator = { TabIndicator(it[currentPageIndex], pagerState.currentPageOffsetFraction) },
             // TODO: use default when width is fixed upstream
             // https://issuetracker.google.com/issues/242879624
             divider = {},

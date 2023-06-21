@@ -4,53 +4,56 @@ import android.content.Context
 import android.widget.Toast
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.coroutineScope
-import eu.kanade.domain.UnsortedPreferences
-import eu.kanade.domain.category.interactor.GetCategories
-import eu.kanade.domain.category.interactor.SetMangaCategories
-import eu.kanade.domain.chapter.interactor.GetChapterByMangaId
 import eu.kanade.domain.chapter.interactor.SyncChaptersWithSource
-import eu.kanade.domain.chapter.interactor.UpdateChapter
-import eu.kanade.domain.chapter.model.Chapter
-import eu.kanade.domain.chapter.model.ChapterUpdate
-import eu.kanade.domain.history.interactor.GetHistoryByMangaId
-import eu.kanade.domain.history.interactor.UpsertHistory
-import eu.kanade.domain.history.model.HistoryUpdate
-import eu.kanade.domain.manga.interactor.GetManga
-import eu.kanade.domain.manga.interactor.GetMergedReferencesById
-import eu.kanade.domain.manga.interactor.NetworkToLocalManga
 import eu.kanade.domain.manga.interactor.UpdateManga
-import eu.kanade.domain.manga.model.Manga
-import eu.kanade.domain.manga.model.MangaUpdate
 import eu.kanade.domain.manga.model.hasCustomCover
-import eu.kanade.domain.track.interactor.DeleteTrack
-import eu.kanade.domain.track.interactor.GetTracks
-import eu.kanade.domain.track.interactor.InsertTrack
+import eu.kanade.domain.manga.model.toSManga
 import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.data.cache.CoverCache
 import eu.kanade.tachiyomi.source.CatalogueSource
-import eu.kanade.tachiyomi.source.SourceManager
 import eu.kanade.tachiyomi.source.getNameForMangaInfo
 import eu.kanade.tachiyomi.source.online.all.EHentai
 import eu.kanade.tachiyomi.ui.browse.migration.MigrationFlags
 import eu.kanade.tachiyomi.ui.browse.migration.advanced.process.MigratingManga.SearchResult
-import eu.kanade.tachiyomi.util.lang.launchIO
-import eu.kanade.tachiyomi.util.lang.withUIContext
-import eu.kanade.tachiyomi.util.system.logcat
 import eu.kanade.tachiyomi.util.system.toast
 import exh.eh.EHentaiThrottleManager
 import exh.smartsearch.SmartSearchEngine
 import exh.source.MERGED_SOURCE_ID
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import logcat.LogPriority
+import tachiyomi.core.util.lang.launchIO
+import tachiyomi.core.util.lang.withUIContext
+import tachiyomi.core.util.system.logcat
+import tachiyomi.domain.UnsortedPreferences
+import tachiyomi.domain.category.interactor.GetCategories
+import tachiyomi.domain.category.interactor.SetMangaCategories
+import tachiyomi.domain.chapter.interactor.GetChapterByMangaId
+import tachiyomi.domain.chapter.interactor.UpdateChapter
+import tachiyomi.domain.chapter.model.Chapter
+import tachiyomi.domain.chapter.model.ChapterUpdate
+import tachiyomi.domain.history.interactor.GetHistoryByMangaId
+import tachiyomi.domain.history.interactor.UpsertHistory
+import tachiyomi.domain.history.model.HistoryUpdate
+import tachiyomi.domain.manga.interactor.GetManga
+import tachiyomi.domain.manga.interactor.GetMergedReferencesById
+import tachiyomi.domain.manga.interactor.NetworkToLocalManga
+import tachiyomi.domain.manga.model.Manga
+import tachiyomi.domain.manga.model.MangaUpdate
+import tachiyomi.domain.source.service.SourceManager
+import tachiyomi.domain.track.interactor.DeleteTrack
+import tachiyomi.domain.track.interactor.GetTracks
+import tachiyomi.domain.track.interactor.InsertTrack
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import java.util.concurrent.atomic.AtomicInteger
@@ -90,6 +93,10 @@ class MigrationListScreenModel(
     val navigateOut = MutableSharedFlow<Unit>()
 
     val dialog = MutableStateFlow<Dialog?>(null)
+
+    val migratingProgress = MutableStateFlow(Float.MAX_VALUE)
+
+    private var migrateJob: Job? = null
 
     init {
         coroutineScope.launchIO {
@@ -337,9 +344,7 @@ class MigrationListScreenModel(
             }
 
             updateChapter.awaitAll(chapterUpdates)
-            historyUpdates.forEach {
-                upsertHistory.await(it)
-            }
+            upsertHistory.awaitAll(historyUpdates)
         }
         // Update categories
         if (MigrationFlags.hasCategories(flags)) {
@@ -424,38 +429,54 @@ class MigrationListScreenModel(
     }
 
     fun migrateMangas() {
-        coroutineScope.launchIO {
-            migratingItems.value.orEmpty().forEach { manga ->
-                val searchResult = manga.searchResult.value
-                if (searchResult is SearchResult.Result) {
-                    val toMangaObj = getManga.await(searchResult.id) ?: return@forEach
-                    migrateMangaInternal(
-                        manga.manga,
-                        toMangaObj,
-                        true,
-                    )
-                }
-            }
-
-            navigateOut()
-        }
+        migrateMangas(true)
     }
 
     fun copyMangas() {
-        coroutineScope.launchIO {
-            migratingItems.value.orEmpty().forEach { manga ->
-                val searchResult = manga.searchResult.value
-                if (searchResult is SearchResult.Result) {
-                    val toMangaObj = getManga.await(searchResult.id) ?: return@forEach
-                    migrateMangaInternal(
-                        manga.manga,
-                        toMangaObj,
-                        false,
-                    )
+        migrateMangas(false)
+    }
+
+    private fun migrateMangas(replace: Boolean) {
+        dialog.value = null
+        migrateJob = coroutineScope.launchIO {
+            migratingProgress.value = 0f
+            val items = migratingItems.value.orEmpty()
+            try {
+                items.forEachIndexed { index, manga ->
+                    try {
+                        ensureActive()
+                        val toMangaObj = manga.searchResult.value.let {
+                            if (it is SearchResult.Result) {
+                                getManga.await(it.id)
+                            } else {
+                                null
+                            }
+                        }
+                        if (toMangaObj != null) {
+                            migrateMangaInternal(
+                                manga.manga,
+                                toMangaObj,
+                                replace,
+                            )
+                        }
+                    } catch (e: Exception) {
+                        if (e is CancellationException) throw e
+                        logcat(LogPriority.WARN, throwable = e)
+                    }
+                    migratingProgress.value = index.toFloat() / items.size
                 }
+
+                navigateOut()
+            } finally {
+                migratingProgress.value = Float.MAX_VALUE
+                migrateJob = null
             }
-            navigateOut()
         }
+    }
+
+    fun cancelMigrate() {
+        migrateJob?.cancel()
+        migrateJob = null
     }
 
     private suspend fun navigateOut() {

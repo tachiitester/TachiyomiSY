@@ -3,40 +3,38 @@ package eu.kanade.tachiyomi.ui.browse.migration.search
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.paging.compose.collectAsLazyPagingItems
 import cafe.adriel.voyager.core.model.rememberScreenModel
-import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import eu.kanade.domain.manga.model.Manga
 import eu.kanade.presentation.browse.BrowseSourceContent
 import eu.kanade.presentation.browse.components.BrowseSourceFloatingActionButton
-import eu.kanade.presentation.components.Scaffold
 import eu.kanade.presentation.components.SearchToolbar
-import eu.kanade.tachiyomi.source.LocalSource
+import eu.kanade.presentation.util.Screen
 import eu.kanade.tachiyomi.source.online.HttpSource
 import eu.kanade.tachiyomi.ui.browse.migration.advanced.process.MigrationListScreen
 import eu.kanade.tachiyomi.ui.browse.source.browse.BrowseSourceScreenModel
+import eu.kanade.tachiyomi.ui.browse.source.browse.SourceFilterDialog
 import eu.kanade.tachiyomi.ui.manga.MangaScreen
-import eu.kanade.tachiyomi.ui.webview.WebViewActivity
-import eu.kanade.tachiyomi.util.Constants
+import eu.kanade.tachiyomi.ui.webview.WebViewScreen
+import tachiyomi.core.Constants
+import tachiyomi.domain.manga.model.Manga
+import tachiyomi.presentation.core.components.material.Scaffold
+import tachiyomi.source.local.LocalSource
 
 data class SourceSearchScreen(
     private val oldManga: Manga,
     private val sourceId: Long,
     private val query: String?,
-) : Screen {
+) : Screen() {
 
     @Composable
     override fun Content() {
-        val context = LocalContext.current
         val uriHandler = LocalUriHandler.current
         val navigator = LocalNavigator.currentOrThrow
 
@@ -51,7 +49,7 @@ data class SourceSearchScreen(
                     searchQuery = state.toolbarQuery ?: "",
                     onChangeSearchQuery = screenModel::setToolbarQuery,
                     onClickCloseSearch = navigator::pop,
-                    onSearch = { screenModel.search(it) },
+                    onSearch = screenModel::search,
                     scrollBehavior = scrollBehavior,
                 )
             },
@@ -87,8 +85,13 @@ data class SourceSearchScreen(
                 contentPadding = paddingValues,
                 onWebViewClick = {
                     val source = screenModel.source as? HttpSource ?: return@BrowseSourceContent
-                    val intent = WebViewActivity.newIntent(context, source.baseUrl, source.id, source.name)
-                    context.startActivity(intent)
+                    navigator.push(
+                        WebViewScreen(
+                            url = source.baseUrl,
+                            initialTitle = source.name,
+                            sourceId = source.id,
+                        ),
+                    )
                 },
                 onHelpClick = { uriHandler.openUri(Constants.URL_HELP) },
                 onLocalSourceHelpClick = { uriHandler.openUri(LocalSource.HELP_URL) },
@@ -97,8 +100,27 @@ data class SourceSearchScreen(
             )
         }
 
-        LaunchedEffect(state.filters) {
-            screenModel.initFilterSheet(context, navigator)
+        val onDismissRequest = { screenModel.setDialog(null) }
+        when (val dialog = state.dialog) {
+            is BrowseSourceScreenModel.Dialog.Filter -> {
+                SourceFilterDialog(
+                    onDismissRequest = onDismissRequest,
+                    filters = state.filters,
+                    onReset = screenModel::resetFilters,
+                    onFilter = { screenModel.search(filters = state.filters) },
+                    onUpdate = screenModel::setFilters,
+                    // SY -->
+                    startExpanded = screenModel.startExpanded,
+                    onSave = {},
+                    savedSearches = emptyList(),
+                    onSavedSearch = {},
+                    onSavedSearchPress = {},
+                    openMangaDexRandom = null,
+                    openMangaDexFollows = null,
+                    // SY <--
+                )
+            }
+            else -> {}
         }
     }
 }

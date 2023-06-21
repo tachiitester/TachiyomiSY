@@ -9,20 +9,23 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import cafe.adriel.voyager.core.model.rememberScreenModel
-import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import eu.kanade.presentation.browse.MigrationListScreen
 import eu.kanade.presentation.browse.components.MigrationExitDialog
 import eu.kanade.presentation.browse.components.MigrationMangaDialog
+import eu.kanade.presentation.browse.components.MigrationProgressDialog
+import eu.kanade.presentation.util.Screen
 import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.ui.browse.migration.advanced.design.PreMigrationScreen
 import eu.kanade.tachiyomi.ui.browse.migration.search.MigrateSearchScreen
 import eu.kanade.tachiyomi.ui.manga.MangaScreen
-import eu.kanade.tachiyomi.util.lang.withUIContext
 import eu.kanade.tachiyomi.util.system.toast
+import exh.util.overEq
+import exh.util.underEq
+import tachiyomi.core.util.lang.withUIContext
 
-class MigrationListScreen(private val config: MigrationProcedureConfig) : Screen {
+class MigrationListScreen(private val config: MigrationProcedureConfig) : Screen() {
 
     @delegate:Transient
     var newSelectedItem by mutableStateOf<Pair<Long, Long>?>(null)
@@ -34,6 +37,7 @@ class MigrationListScreen(private val config: MigrationProcedureConfig) : Screen
         val migrationDone by screenModel.migrationDone.collectAsState()
         val unfinishedCount by screenModel.unfinishedCount.collectAsState()
         val dialog by screenModel.dialog.collectAsState()
+        val migrateProgress by screenModel.migratingProgress.collectAsState()
         val navigator = LocalNavigator.currentOrThrow
         val context = LocalContext.current
         LaunchedEffect(items) {
@@ -73,6 +77,10 @@ class MigrationListScreen(private val config: MigrationProcedureConfig) : Screen
                             } + MangaScreen(mangaId)
                             navigator replaceAll newStack.first()
                             navigator.push(newStack.drop(1))
+
+                            // need to set the navigator in a pop state to dispose of everything properly
+                            navigator.push(this@MigrationListScreen)
+                            navigator.pop()
                         } else {
                             navigator.pop()
                         }
@@ -129,6 +137,13 @@ class MigrationListScreen(private val config: MigrationProcedureConfig) : Screen
                 )
             }
             null -> Unit
+        }
+
+        if (!migrateProgress.isNaN() && migrateProgress overEq 0f && migrateProgress underEq 1f) {
+            MigrationProgressDialog(
+                progress = migrateProgress,
+                exitMigration = screenModel::cancelMigrate,
+            )
         }
 
         BackHandler(true) {

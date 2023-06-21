@@ -1,10 +1,8 @@
 package eu.kanade.domain.source.interactor
 
 import eu.kanade.tachiyomi.source.model.FilterList
-import eu.kanade.tachiyomi.util.lang.withIOContext
 import exh.log.xLogE
-import exh.savedsearches.EXHSavedSearch
-import exh.savedsearches.models.SavedSearch
+import exh.util.nullIfBlank
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOn
@@ -12,6 +10,11 @@ import kotlinx.coroutines.flow.map
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
+import tachiyomi.core.util.lang.withIOContext
+import tachiyomi.domain.source.interactor.GetSavedSearchById
+import tachiyomi.domain.source.interactor.GetSavedSearchBySourceId
+import tachiyomi.domain.source.model.EXHSavedSearch
+import tachiyomi.domain.source.model.SavedSearch
 import xyz.nulldev.ts.api.http.serializer.FilterSerializer
 
 class GetExhSavedSearch(
@@ -45,7 +48,7 @@ class GetExhSavedSearch(
         return EXHSavedSearch(
             id = search.id,
             name = search.name,
-            query = search.query.orEmpty(),
+            query = search.query?.nullIfBlank(),
             filterList = filters?.let { deserializeFilters(it, getFilterList) },
         )
     }

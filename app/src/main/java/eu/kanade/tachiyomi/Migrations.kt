@@ -1,23 +1,15 @@
 package eu.kanade.tachiyomi
 
 import android.content.Context
-import android.os.Build
 import androidx.core.content.edit
 import androidx.preference.PreferenceManager
-import eu.kanade.domain.backup.service.BackupPreferences
 import eu.kanade.domain.base.BasePreferences
-import eu.kanade.domain.library.service.LibraryPreferences
 import eu.kanade.domain.source.service.SourcePreferences
 import eu.kanade.domain.ui.UiPreferences
-import eu.kanade.tachiyomi.core.preference.PreferenceStore
 import eu.kanade.tachiyomi.core.security.SecurityPreferences
-import eu.kanade.tachiyomi.data.backup.BackupCreatorJob
+import eu.kanade.tachiyomi.data.backup.BackupCreateJob
 import eu.kanade.tachiyomi.data.library.LibraryUpdateJob
-import eu.kanade.tachiyomi.data.preference.MANGA_NON_COMPLETED
-import eu.kanade.tachiyomi.data.preference.PreferenceValues
 import eu.kanade.tachiyomi.data.track.TrackManager
-import eu.kanade.tachiyomi.data.updater.AppUpdateJob
-import eu.kanade.tachiyomi.extension.ExtensionUpdateJob
 import eu.kanade.tachiyomi.network.NetworkPreferences
 import eu.kanade.tachiyomi.network.PREF_DOH_CLOUDFLARE
 import eu.kanade.tachiyomi.ui.reader.setting.OrientationType
@@ -25,8 +17,15 @@ import eu.kanade.tachiyomi.ui.reader.setting.ReaderPreferences
 import eu.kanade.tachiyomi.util.preference.minusAssign
 import eu.kanade.tachiyomi.util.preference.plusAssign
 import eu.kanade.tachiyomi.util.system.DeviceUtil
+import eu.kanade.tachiyomi.util.system.isReleaseBuildType
 import eu.kanade.tachiyomi.util.system.toast
-import eu.kanade.tachiyomi.widget.ExtendedNavigationView
+import eu.kanade.tachiyomi.util.system.workManager
+import tachiyomi.core.preference.PreferenceStore
+import tachiyomi.core.preference.getEnum
+import tachiyomi.domain.backup.service.BackupPreferences
+import tachiyomi.domain.library.service.LibraryPreferences
+import tachiyomi.domain.library.service.LibraryPreferences.Companion.MANGA_NON_COMPLETED
+import tachiyomi.domain.manga.model.TriStateFilter
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import java.io.File
@@ -51,6 +50,7 @@ object Migrations {
         libraryPreferences: LibraryPreferences,
         readerPreferences: ReaderPreferences,
         backupPreferences: BackupPreferences,
+        trackManager: TrackManager,
     ): Boolean {
         val lastVersionCode = preferenceStore.getInt("last_version_code", 0)
         val oldVersion = lastVersionCode.get()
@@ -58,12 +58,8 @@ object Migrations {
             lastVersionCode.set(BuildConfig.VERSION_CODE)
 
             // Always set up background tasks to ensure they're running
-            if (BuildConfig.INCLUDE_UPDATER) {
-                AppUpdateJob.setupTask(context)
-            }
-            ExtensionUpdateJob.setupTask(context)
             LibraryUpdateJob.setupTask(context)
-            BackupCreatorJob.setupTask(context)
+            BackupCreateJob.setupTask(context)
 
             // Fresh install
             if (oldVersion == 0) {
@@ -74,9 +70,6 @@ object Migrations {
 
             if (oldVersion < 14) {
                 // Restore jobs after upgrading to Evernote's job scheduler.
-                if (BuildConfig.INCLUDE_UPDATER) {
-                    AppUpdateJob.setupTask(context)
-                }
                 LibraryUpdateJob.setupTask(context)
             }
             if (oldVersion < 15) {
@@ -107,14 +100,8 @@ object Migrations {
             }
             if (oldVersion < 43) {
                 // Restore jobs after migrating from Evernote's job scheduler to WorkManager.
-                if (BuildConfig.INCLUDE_UPDATER) {
-                    AppUpdateJob.setupTask(context)
-                }
                 LibraryUpdateJob.setupTask(context)
-                BackupCreatorJob.setupTask(context)
-
-                // New extension update check job
-                ExtensionUpdateJob.setupTask(context)
+                BackupCreateJob.setupTask(context)
             }
             if (oldVersion < 44) {
                 // Reset sorting preference if using removed sort by source
@@ -131,9 +118,9 @@ object Migrations {
                 fun convertBooleanPrefToTriState(key: String): Int {
                     val oldPrefValue = prefs.getBoolean(key, false)
                     return if (oldPrefValue) {
-                        ExtendedNavigationView.Item.TriStateGroup.State.INCLUDE.value
+                        1
                     } else {
-                        ExtendedNavigationView.Item.TriStateGroup.State.IGNORE.value
+                        0
                     }
                 }
                 prefs.edit {
@@ -174,18 +161,8 @@ object Migrations {
                         putInt("pref_rotation_type_key", 1)
                     }
                 }
-
-                // Disable update check for Android 5.x users
-                if (BuildConfig.INCLUDE_UPDATER && Build.VERSION.SDK_INT <= Build.VERSION_CODES.M) {
-                    AppUpdateJob.cancelTask(context)
-                }
             }
             if (oldVersion < 60) {
-                // Re-enable update check that was previously accidentally disabled for M
-                if (BuildConfig.INCLUDE_UPDATER && Build.VERSION.SDK_INT == Build.VERSION_CODES.M) {
-                    AppUpdateJob.setupTask(context)
-                }
-
                 // Migrate Rotation and Viewer values to default values for viewer_flags
                 val newOrientation = when (prefs.getInt("pref_rotation_type_key", 1)) {
                     1 -> OrientationType.FREE.flagValue
@@ -270,12 +247,12 @@ object Migrations {
                 if (oldSecureScreen) {
                     securityPreferences.secureScreen().set(SecurityPreferences.SecureScreenMode.ALWAYS)
                 }
-                if (DeviceUtil.isMiui && basePreferences.extensionInstaller().get() == PreferenceValues.ExtensionInstaller.PACKAGEINSTALLER) {
-                    basePreferences.extensionInstaller().set(PreferenceValues.ExtensionInstaller.LEGACY)
+                if (DeviceUtil.isMiui && basePreferences.extensionInstaller().get() == BasePreferences.ExtensionInstaller.PACKAGEINSTALLER) {
+                    basePreferences.extensionInstaller().set(BasePreferences.ExtensionInstaller.LEGACY)
                 }
             }
             if (oldVersion < 76) {
-                BackupCreatorJob.setupTask(context)
+                BackupCreateJob.setupTask(context)
             }
             if (oldVersion < 77) {
                 val oldReaderTap = prefs.getBoolean("reader_tap", false)
@@ -310,7 +287,7 @@ object Migrations {
                 }
                 if (backupPreferences.backupInterval().get() == 0) {
                     backupPreferences.backupInterval().set(12)
-                    BackupCreatorJob.setupTask(context)
+                    BackupCreateJob.setupTask(context)
                 }
             }
             if (oldVersion < 85) {
@@ -349,6 +326,52 @@ object Migrations {
                         remove(it.key)
                         putFloat(it.key, lastChapterRead.toFloat())
                     }
+                }
+            }
+            if (oldVersion < 95) {
+                LibraryUpdateJob.cancelAllWorks(context)
+                LibraryUpdateJob.setupTask(context)
+            }
+            if (oldVersion < 97) {
+                // Removed background jobs
+                context.workManager.cancelAllWorkByTag("UpdateChecker")
+                context.workManager.cancelAllWorkByTag("ExtensionUpdate")
+                prefs.edit {
+                    remove("automatic_ext_updates")
+                }
+            }
+            if (oldVersion < 99) {
+                val prefKeys = listOf(
+                    "pref_filter_library_downloaded",
+                    "pref_filter_library_unread",
+                    "pref_filter_library_started",
+                    "pref_filter_library_bookmarked",
+                    "pref_filter_library_completed",
+                ) + trackManager.services.map { "pref_filter_library_tracked_${it.id}" }
+
+                prefKeys.forEach { key ->
+                    val pref = preferenceStore.getInt(key, 0)
+                    prefs.edit {
+                        remove(key)
+
+                        val newValue = when (pref.get()) {
+                            1 -> TriStateFilter.ENABLED_IS
+                            2 -> TriStateFilter.ENABLED_NOT
+                            else -> TriStateFilter.DISABLED
+                        }
+
+                        preferenceStore.getEnum("${key}_v2", TriStateFilter.DISABLED).set(newValue)
+                    }
+                }
+            }
+            if (oldVersion < 100) {
+                BackupCreateJob.setupTask(context)
+            }
+            if (oldVersion < 102) {
+                // This was accidentally visible from the reader settings sheet, but should always
+                // be disabled in release builds.
+                if (isReleaseBuildType) {
+                    readerPreferences.longStripSplitWebtoon().set(false)
                 }
             }
             return true

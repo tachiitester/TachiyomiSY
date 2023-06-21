@@ -1,8 +1,5 @@
 package exh.md.handlers
 
-import eu.kanade.domain.manga.interactor.GetFlatMetadataById
-import eu.kanade.domain.manga.interactor.GetManga
-import eu.kanade.domain.manga.interactor.InsertFlatMetadata
 import eu.kanade.tachiyomi.source.model.SChapter
 import eu.kanade.tachiyomi.source.model.SManga
 import exh.log.xLogE
@@ -18,6 +15,9 @@ import exh.metadata.metadata.base.RaisedTag
 import exh.util.capitalize
 import exh.util.floor
 import exh.util.nullIfEmpty
+import tachiyomi.domain.manga.interactor.GetFlatMetadataById
+import tachiyomi.domain.manga.interactor.GetManga
+import tachiyomi.domain.manga.interactor.InsertFlatMetadata
 import uy.kohesive.injekt.injectLazy
 import java.util.Locale
 
@@ -33,10 +33,7 @@ class ApiMangaParser(
     /**
      * Use reflection to create a new instance of metadata
      */
-    private fun newMetaInstance() = metaClass.constructors.find {
-        it.parameters.isEmpty()
-    }?.call()
-        ?: error("Could not find no-args constructor for meta class: ${metaClass.qualifiedName}!")
+    private fun newMetaInstance() = MangaDexSearchMetadata()
 
     suspend fun parseToManga(
         manga: SManga,

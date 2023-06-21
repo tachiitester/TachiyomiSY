@@ -4,7 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.net.Uri
 import eu.kanade.tachiyomi.network.GET
-import eu.kanade.tachiyomi.network.await
+import eu.kanade.tachiyomi.network.awaitSuccess
 import eu.kanade.tachiyomi.network.newCachelessCallWithProgress
 import eu.kanade.tachiyomi.source.PagePreviewInfo
 import eu.kanade.tachiyomi.source.PagePreviewPage
@@ -36,6 +36,7 @@ class NHentai(delegate: HttpSource, val context: Context) :
     NamespaceSource,
     PagePreviewSource {
     override val metaClass = NHentaiSearchMetadata::class
+    override fun newMetaInstance() = NHentaiSearchMetadata()
     override val lang = delegate.lang
 
     private val sourcePreferences: SharedPreferences by lazy {
@@ -55,7 +56,7 @@ class NHentai(delegate: HttpSource, val context: Context) :
         }
 
     override suspend fun getMangaDetails(manga: SManga): SManga {
-        val response = client.newCall(mangaDetailsRequest(manga)).await()
+        val response = client.newCall(mangaDetailsRequest(manga)).awaitSuccess()
         return parseToManga(manga, response)
     }
 
@@ -175,7 +176,7 @@ class NHentai(delegate: HttpSource, val context: Context) :
 
     override suspend fun getPagePreviewList(manga: SManga, chapters: List<SChapter>, page: Int): PagePreviewPage {
         val metadata = fetchOrLoadMetadata(manga.id()) {
-            client.newCall(mangaDetailsRequest(manga)).await()
+            client.newCall(mangaDetailsRequest(manga)).awaitSuccess()
         }
         return PagePreviewPage(
             page,
@@ -199,7 +200,7 @@ class NHentai(delegate: HttpSource, val context: Context) :
                 GET(page.imageUrl)
             },
             page,
-        ).await()
+        ).awaitSuccess()
     }
 
     companion object {

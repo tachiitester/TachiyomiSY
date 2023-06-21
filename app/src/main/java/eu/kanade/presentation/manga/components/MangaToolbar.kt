@@ -26,11 +26,13 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import eu.kanade.presentation.components.AppBar
+import eu.kanade.presentation.components.AppBarActions
 import eu.kanade.presentation.components.DownloadDropdownMenu
 import eu.kanade.presentation.components.OverflowMenu
 import eu.kanade.presentation.manga.DownloadAction
-import eu.kanade.presentation.theme.active
 import eu.kanade.tachiyomi.R
+import tachiyomi.presentation.core.theme.active
 
 @Composable
 fun MangaToolbar(
@@ -44,6 +46,7 @@ fun MangaToolbar(
     onClickShare: (() -> Unit)?,
     onClickDownload: ((DownloadAction) -> Unit)?,
     onClickEditCategory: (() -> Unit)?,
+    onClickRefresh: () -> Unit,
     onClickMigrate: (() -> Unit)?,
     // SY -->
     onClickEditInfo: (() -> Unit)?,
@@ -79,18 +82,20 @@ fun MangaToolbar(
             },
             actions = {
                 if (isActionMode) {
-                    IconButton(onClick = onSelectAll) {
-                        Icon(
-                            imageVector = Icons.Outlined.SelectAll,
-                            contentDescription = stringResource(R.string.action_select_all),
-                        )
-                    }
-                    IconButton(onClick = onInvertSelection) {
-                        Icon(
-                            imageVector = Icons.Outlined.FlipToBack,
-                            contentDescription = stringResource(R.string.action_select_inverse),
-                        )
-                    }
+                    AppBarActions(
+                        listOf(
+                            AppBar.Action(
+                                title = stringResource(R.string.action_select_all),
+                                icon = Icons.Outlined.SelectAll,
+                                onClick = onSelectAll,
+                            ),
+                            AppBar.Action(
+                                title = stringResource(R.string.action_select_inverse),
+                                icon = Icons.Outlined.FlipToBack,
+                                onClick = onInvertSelection,
+                            ),
+                        ),
+                    )
                 } else {
                     if (onClickDownload != null) {
                         val (downloadExpanded, onDownloadExpanded) = remember { mutableStateOf(false) }
@@ -115,78 +120,83 @@ fun MangaToolbar(
                         Icon(Icons.Outlined.FilterList, contentDescription = stringResource(R.string.action_filter), tint = filterTint)
                     }
 
-                    if (listOfNotNull(onClickShare, onClickEditCategory, onClickMigrate, onClickEditInfo, onClickRecommend, onClickMergedSettings).isNotEmpty()) {
-                        OverflowMenu { closeMenu ->
-                            if (onClickEditCategory != null) {
-                                DropdownMenuItem(
-                                    text = { Text(text = stringResource(R.string.action_edit_categories)) },
-                                    onClick = {
-                                        onClickEditCategory()
-                                        closeMenu()
-                                    },
-                                )
-                            }
-                            if (onClickMigrate != null) {
-                                DropdownMenuItem(
-                                    text = { Text(text = stringResource(R.string.action_migrate)) },
-                                    onClick = {
-                                        onClickMigrate()
-                                        closeMenu()
-                                    },
-                                )
-                            }
-                            if (onClickShare != null) {
-                                DropdownMenuItem(
-                                    text = { Text(text = stringResource(R.string.action_share)) },
-                                    onClick = {
-                                        onClickShare()
-                                        closeMenu()
-                                    },
-                                )
-                            }
-                            // SY -->
-                            if (onClickMerge != null) {
-                                DropdownMenuItem(
-                                    text = { Text(text = stringResource(R.string.merge)) },
-                                    onClick = {
-                                        onClickMerge()
-                                        closeMenu()
-                                    },
-                                )
-                            }
-                            if (onClickEditInfo != null) {
-                                DropdownMenuItem(
-                                    text = { Text(text = stringResource(R.string.action_edit_info)) },
-                                    onClick = {
-                                        onClickEditInfo()
-                                        closeMenu()
-                                    },
-                                )
-                            }
-                            if (onClickRecommend != null) {
-                                DropdownMenuItem(
-                                    text = { Text(text = stringResource(R.string.az_recommends)) },
-                                    onClick = {
-                                        onClickRecommend()
-                                        closeMenu()
-                                    },
-                                )
-                            }
-                            if (onClickMergedSettings != null) {
-                                DropdownMenuItem(
-                                    text = { Text(text = stringResource(R.string.merge_settings)) },
-                                    onClick = {
-                                        onClickMergedSettings()
-                                        closeMenu()
-                                    },
-                                )
-                            }
-                            // SY <--
+                    OverflowMenu { closeMenu ->
+                        DropdownMenuItem(
+                            text = { Text(text = stringResource(R.string.action_webview_refresh)) },
+                            onClick = {
+                                onClickRefresh()
+                                closeMenu()
+                            },
+                        )
+                        if (onClickEditCategory != null) {
+                            DropdownMenuItem(
+                                text = { Text(text = stringResource(R.string.action_edit_categories)) },
+                                onClick = {
+                                    onClickEditCategory()
+                                    closeMenu()
+                                },
+                            )
                         }
+                        if (onClickMigrate != null) {
+                            DropdownMenuItem(
+                                text = { Text(text = stringResource(R.string.action_migrate)) },
+                                onClick = {
+                                    onClickMigrate()
+                                    closeMenu()
+                                },
+                            )
+                        }
+                        if (onClickShare != null) {
+                            DropdownMenuItem(
+                                text = { Text(text = stringResource(R.string.action_share)) },
+                                onClick = {
+                                    onClickShare()
+                                    closeMenu()
+                                },
+                            )
+                        }
+                        // SY -->
+                        if (onClickMerge != null) {
+                            DropdownMenuItem(
+                                text = { Text(text = stringResource(R.string.merge)) },
+                                onClick = {
+                                    onClickMerge()
+                                    closeMenu()
+                                },
+                            )
+                        }
+                        if (onClickEditInfo != null) {
+                            DropdownMenuItem(
+                                text = { Text(text = stringResource(R.string.action_edit_info)) },
+                                onClick = {
+                                    onClickEditInfo()
+                                    closeMenu()
+                                },
+                            )
+                        }
+                        if (onClickRecommend != null) {
+                            DropdownMenuItem(
+                                text = { Text(text = stringResource(R.string.az_recommends)) },
+                                onClick = {
+                                    onClickRecommend()
+                                    closeMenu()
+                                },
+                            )
+                        }
+                        if (onClickMergedSettings != null) {
+                            DropdownMenuItem(
+                                text = { Text(text = stringResource(R.string.merge_settings)) },
+                                onClick = {
+                                    onClickMergedSettings()
+                                    closeMenu()
+                                },
+                            )
+                        }
+                        // SY <--
                     }
                 }
             },
-            colors = TopAppBarDefaults.smallTopAppBarColors(
+            colors = TopAppBarDefaults.topAppBarColors(
                 containerColor = MaterialTheme.colorScheme
                     .surfaceColorAtElevation(3.dp)
                     .copy(alpha = if (isActionMode) 1f else backgroundAlphaProvider()),

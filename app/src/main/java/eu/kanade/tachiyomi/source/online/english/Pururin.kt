@@ -3,7 +3,7 @@ package eu.kanade.tachiyomi.source.online.english
 import android.content.Context
 import android.net.Uri
 import androidx.core.net.toUri
-import eu.kanade.tachiyomi.network.await
+import eu.kanade.tachiyomi.network.awaitSuccess
 import eu.kanade.tachiyomi.source.model.FilterList
 import eu.kanade.tachiyomi.source.model.MangasPage
 import eu.kanade.tachiyomi.source.model.SManga
@@ -36,6 +36,7 @@ class Pururin(delegate: HttpSource, val context: Context) :
      * The class of the metadata used by this source
      */
     override val metaClass = PururinSearchMetadata::class
+    override fun newMetaInstance() = PururinSearchMetadata()
 
     // Support direct URL importing
     override fun fetchSearchManga(page: Int, query: String, filters: FilterList): Observable<MangasPage> {
@@ -52,7 +53,7 @@ class Pururin(delegate: HttpSource, val context: Context) :
     }
 
     override suspend fun getMangaDetails(manga: SManga): SManga {
-        val response = client.newCall(mangaDetailsRequest(manga)).await()
+        val response = client.newCall(mangaDetailsRequest(manga)).awaitSuccess()
         return parseToManga(manga, response.asJsoup())
     }
 

@@ -15,7 +15,6 @@ import androidx.compose.material.icons.outlined.CopyAll
 import androidx.compose.material.icons.outlined.Done
 import androidx.compose.material.icons.outlined.DoneAll
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -24,18 +23,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import eu.kanade.domain.manga.model.Manga
 import eu.kanade.presentation.browse.components.MigrationActionIcon
 import eu.kanade.presentation.browse.components.MigrationItem
 import eu.kanade.presentation.browse.components.MigrationItemResult
 import eu.kanade.presentation.components.AppBar
-import eu.kanade.presentation.components.Scaffold
-import eu.kanade.presentation.components.ScrollbarLazyColumn
-import eu.kanade.presentation.util.plus
-import eu.kanade.presentation.util.topSmallPaddingValues
+import eu.kanade.presentation.components.AppBarActions
 import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.ui.browse.migration.advanced.process.MigratingManga
-import eu.kanade.tachiyomi.util.lang.withIOContext
+import tachiyomi.core.util.lang.withIOContext
+import tachiyomi.domain.manga.model.Manga
+import tachiyomi.presentation.core.components.ScrollbarLazyColumn
+import tachiyomi.presentation.core.components.material.Scaffold
+import tachiyomi.presentation.core.components.material.topSmallPaddingValues
+import tachiyomi.presentation.core.util.plus
 
 @Composable
 fun MigrationListScreen(
@@ -63,24 +63,22 @@ fun MigrationListScreen(
             AppBar(
                 title = title,
                 actions = {
-                    IconButton(
-                        onClick = { openMigrationDialog(true) },
-                        enabled = migrationDone,
-                    ) {
-                        Icon(
-                            imageVector = if (items.size == 1) Icons.Outlined.ContentCopy else Icons.Outlined.CopyAll,
-                            contentDescription = stringResource(R.string.copy),
-                        )
-                    }
-                    IconButton(
-                        onClick = { openMigrationDialog(false) },
-                        enabled = migrationDone,
-                    ) {
-                        Icon(
-                            imageVector = if (items.size == 1) Icons.Outlined.Done else Icons.Outlined.DoneAll,
-                            contentDescription = stringResource(R.string.migrate),
-                        )
-                    }
+                    AppBarActions(
+                        listOf(
+                            AppBar.Action(
+                                title = stringResource(R.string.copy),
+                                icon = if (items.size == 1) Icons.Outlined.ContentCopy else Icons.Outlined.CopyAll,
+                                onClick = { openMigrationDialog(false) },
+                                enabled = migrationDone,
+                            ),
+                            AppBar.Action(
+                                title = stringResource(R.string.migrate),
+                                icon = if (items.size == 1) Icons.Outlined.Done else Icons.Outlined.DoneAll,
+                                onClick = { openMigrationDialog(false) },
+                                enabled = migrationDone,
+                            ),
+                        ),
+                    )
                 },
                 scrollBehavior = scrollBehavior,
             )
