@@ -1,4 +1,4 @@
-package eu.kanade.tachiyomi
+hpackage eu.kanade.tachiyomi
 
 import android.content.Context
 import androidx.core.content.edit
